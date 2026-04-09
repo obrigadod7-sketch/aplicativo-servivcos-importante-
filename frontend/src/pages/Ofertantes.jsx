@@ -4,7 +4,8 @@ import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { Search, MapPin, Star, Wrench, Hammer, Car, Sparkles } from 'lucide-react';
+import { Dialog, DialogContent } from '../components/ui/dialog';
+import { Search, MapPin, Star, Wrench, Hammer, Car, Sparkles, Filter, X, ChevronRight } from 'lucide-react';
 
 const profissionais = [
   {
@@ -58,6 +59,20 @@ const profissionais = [
   }
 ];
 
+const allCategories = [
+  { id: 'outillage', name: 'Ferramentas & Trabalhos', icon: Hammer },
+  { id: 'jardin', name: 'Material de Jardim', icon: Wrench },
+  { id: 'maison', name: 'Casa & Conforto', icon: Sparkles },
+  { id: 'evenement', name: 'Evento, Recepção & Festa', icon: null },
+  { id: 'hightech', name: 'High Tech & Material de Escritório', icon: null },
+  { id: 'sport', name: 'Material de Esporte', icon: null },
+  { id: 'loisirs', name: 'Lazer', icon: null },
+  { id: 'mode', name: 'Moda & Acessórios Adulto', icon: null },
+  { id: 'enfant', name: 'Moda Infantil, Bebê & Puericultura', icon: null },
+  { id: 'transport', name: 'Transporte & Acessórios Auto, Moto', icon: Car },
+  { id: 'immobilier', name: 'Imobiliário', icon: null }
+];
+
 const categories = [
   { id: 'bricolage', name: 'Reparos', icon: Hammer },
   { id: 'menage', name: 'Limpeza', icon: Sparkles },
@@ -70,6 +85,8 @@ const Ofertantes = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('bricolage');
   const [searchText, setSearchText] = useState('');
+  const [showCategoriesModal, setShowCategoriesModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('services'); // 'services' or 'objetos'
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif' }}>
@@ -193,6 +210,13 @@ const Ofertantes = () => {
                 </button>
               );
             })}
+            <button
+              onClick={() => setShowCategoriesModal(true)}
+              className="flex flex-col items-center gap-1 px-4 py-2 rounded-lg flex-shrink-0 bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 transition-colors"
+            >
+              <Filter className="w-5 h-5" />
+              <span className="text-[11px] font-medium whitespace-nowrap">Todas</span>
+            </button>
           </div>
         </div>
       </div>
@@ -353,6 +377,67 @@ const Ofertantes = () => {
           </div>
         </div>
       </div>
+
+      {/* Categories Modal */}
+      {showCategoriesModal && (
+        <Dialog open={showCategoriesModal} onOpenChange={setShowCategoriesModal}>
+          <DialogContent className="sm:max-w-md">
+            <div className="relative">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4 pb-4 border-b">
+                <h2 className="text-lg font-bold">Todas as categorias</h2>
+                <button
+                  onClick={() => setShowCategoriesModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex gap-2 mb-4">
+                <button
+                  onClick={() => setActiveTab('services')}
+                  className={`flex-1 py-2 px-4 text-sm font-medium rounded-lg transition-colors ${
+                    activeTab === 'services' 
+                      ? 'bg-gray-100 text-gray-900' 
+                      : 'bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  Serviços
+                </button>
+                <button
+                  onClick={() => setActiveTab('objetos')}
+                  className={`flex-1 py-2 px-4 text-sm font-medium rounded-lg transition-colors ${
+                    activeTab === 'objetos' 
+                      ? 'bg-gray-100 text-gray-900' 
+                      : 'bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  Objetos
+                </button>
+              </div>
+
+              {/* Categories List */}
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {allCategories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => {
+                      setSelectedCategory(category.id);
+                      setShowCategoriesModal(false);
+                    }}
+                    className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors text-left"
+                  >
+                    <span className="text-sm font-medium text-gray-700">{category.name}</span>
+                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <style>{`
         .hide-scrollbar::-webkit-scrollbar {
