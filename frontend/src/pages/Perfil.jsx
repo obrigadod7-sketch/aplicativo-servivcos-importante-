@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { Star, MapPin, Phone, X, Check, User, Users } from 'lucide-react';
+import { Star, MapPin, Phone, X, Check, User, Users, LogOut } from 'lucide-react';
+import { useToast } from '../hooks/use-toast';
 
 // Mock profile data for different providers
 const profilesData = {
@@ -78,9 +79,31 @@ const profilesData = {
 
 const Perfil = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('presentation');
   const profileId = searchParams.get('id') || '1';
   const profile = profilesData[profileId] || profilesData['1'];
+
+  const handleLogout = () => {
+    // Limpar todos os dados do localStorage
+    localStorage.removeItem('user');
+    localStorage.removeItem('userPlan');
+    localStorage.removeItem('planExpiry');
+    localStorage.removeItem('planName');
+    localStorage.removeItem('userProfile');
+    
+    // Mostrar notificação
+    toast({
+      title: 'Logout realizado!',
+      description: 'Você saiu da sua conta com sucesso',
+    });
+    
+    // Redirecionar para a página de login
+    setTimeout(() => {
+      navigate('/login');
+    }, 1000);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif' }}>
@@ -179,13 +202,23 @@ const Perfil = () => {
                 <span className="text-sm">{profile.location}</span>
               </div>
             </div>
-            <Button
-              onClick={() => window.location.href = '/editar-perfil'}
-              variant="outline"
-              className="border-2 border-gray-900 text-gray-900 rounded-full px-6"
-            >
-              Editar perfil
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => window.location.href = '/editar-perfil'}
+                variant="outline"
+                className="border-2 border-gray-900 text-gray-900 rounded-full px-6 hover:bg-gray-900 hover:text-white"
+              >
+                Editar perfil
+              </Button>
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="border-2 border-red-500 text-red-500 rounded-full px-6 hover:bg-red-500 hover:text-white flex items-center gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                Sair
+              </Button>
+            </div>
           </div>
 
           {/* Tabs */}
