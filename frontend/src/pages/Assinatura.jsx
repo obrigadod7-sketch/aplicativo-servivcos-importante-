@@ -5,7 +5,11 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Slider } from '../components/ui/slider';
 import { Checkbox } from '../components/ui/checkbox';
-import { ArrowLeft, MapPin, Check } from 'lucide-react';
+import { 
+  ArrowLeft, MapPin, Check, ChevronDown, Bell, 
+  ChevronRight, Eye, Edit, Star, FileText, Users, 
+  Package, BarChart, Receipt, Settings, MessageSquare 
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../hooks/use-toast';
 
@@ -41,12 +45,24 @@ const plans = [
 const Assinatura = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [activeView, setActiveView] = useState('manage');
   const [selectedPlan, setSelectedPlan] = useState('pro');
-  const [location, setLocation] = useState('São Paulo, SP');
-  const [radius, setRadius] = useState([5]);
+  const [location, setLocation] = useState('54 Avenue de New York 75016 Paris');
+  const [radius, setRadius] = useState([2]);
   const [selectedCategories, setSelectedCategories] = useState(['bricolagem', 'mudanca']);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [servicesExpanded, setServicesExpanded] = useState(false);
+  const [objectsExpanded, setObjectsExpanded] = useState(false);
 
   const currentPlan = plans.find(p => p.id === selectedPlan);
+
+  const selectedServices = serviceCategories.filter(cat => 
+    selectedCategories.includes(cat.id)
+  );
+
+  const totalSelectedItems = selectedServices.reduce((acc, cat) => 
+    acc + cat.items.length, 0
+  );
 
   const handleCategoryToggle = (categoryId) => {
     setSelectedCategories(prev => 
@@ -57,7 +73,6 @@ const Assinatura = () => {
   };
 
   const handleFreeTrial = () => {
-    // Set 3-day free trial
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + 3);
     
@@ -76,7 +91,6 @@ const Assinatura = () => {
   };
 
   const handleFinalize = () => {
-    // Set paid plan
     const expiryDate = new Date();
     expiryDate.setMonth(expiryDate.getMonth() + 1);
     
@@ -94,200 +108,246 @@ const Assinatura = () => {
     }, 2000);
   };
 
+  const handleUpdatePerimeter = () => {
+    toast({
+      title: 'Perímetro atualizado!',
+      description: 'Suas preferências foram salvas com sucesso'
+    });
+  };
+
+  const menuItems = [
+    {
+      title: 'Meu perímetro de intervenção',
+      items: [
+        { icon: MessageSquare, label: 'Ver as demandas', onClick: () => navigate('/feed') },
+        { icon: MapPin, label: 'Gerenciar meu perímetro', active: true, onClick: () => setActiveView('manage') }
+      ]
+    },
+    {
+      title: 'Minha visibilidade',
+      items: [
+        { icon: Eye, label: 'Ver minha página de perfil', onClick: () => navigate('/perfil') },
+        { icon: Edit, label: 'Modificar minha página de perfil', onClick: () => navigate('/editar-perfil') },
+        { icon: Star, label: 'Gerenciar meus comentários' },
+        { icon: FileText, label: 'Meu referenciamento Google' },
+        { icon: MessageSquare, label: 'Meus suportes de comunicação' }
+      ]
+    },
+    {
+      title: 'Minha empresa',
+      badge: 'PRO',
+      items: [
+        { icon: BarChart, label: 'Painel de controle' },
+        { icon: FileText, label: 'Orçamentos' },
+        { icon: Receipt, label: 'Faturas' },
+        { icon: Package, label: 'Cobranças' },
+        { icon: Users, label: 'Diretório de clientes' },
+        { icon: Package, label: 'Catálogo de artigos' },
+        { icon: Settings, label: 'Parâmetros' }
+      ]
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif' }}>
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center space-x-3">
-            <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-full">
+            <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-full lg:hidden">
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className="text-xl font-bold text-gray-900">Criar meu perímetro Premier</h1>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">Assinatura</h1>
+              <p className="text-sm text-gray-600">Encontre todos os serviços inclusos na sua assinatura Standard.</p>
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-3 py-4">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Main Form */}
-          <div className="lg:col-span-2 space-y-4">
-            {/* Section 1: Location */}
+      <div className="max-w-7xl mx-auto px-3 py-4">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          {/* Sidebar Menu */}
+          <div className="lg:col-span-1">
             <Card className="p-4">
-              <div className="flex items-start space-x-3 mb-4">
-                <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-600 font-bold flex-shrink-0">
-                  1
-                </div>
-                <div className="flex-1">
-                  <h2 className="font-bold text-base mb-1">Até onde você deseja atuar?</h2>
-                  <p className="text-sm text-gray-600">
-                    Quanto maior o raio de atuação, mais demandas você receberá
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <Input
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="h-10"
-                    placeholder="Seu endereço"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <Label className="text-sm">Num raio de:</Label>
-                    <span className="font-semibold text-green-600">{radius[0]} km</span>
+              {menuItems.map((section, idx) => (
+                <div key={idx} className={idx > 0 ? 'mt-6' : ''}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <h3 className="font-bold text-sm">{section.title}</h3>
+                    {section.badge && (
+                      <span className="bg-purple-600 text-white text-xs px-2 py-0.5 rounded font-bold">
+                        {section.badge}
+                      </span>
+                    )}
                   </div>
-                  <Slider
-                    value={radius}
-                    onValueChange={setRadius}
-                    max={50}
-                    min={1}
-                    step={1}
-                    className="w-full"
-                  />
+                  <div className="space-y-1">
+                    {section.items.map((item, itemIdx) => {
+                      const Icon = item.icon;
+                      return (
+                        <button
+                          key={itemIdx}
+                          onClick={item.onClick}
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                            item.active 
+                              ? 'bg-pink-50 text-pink-700 font-medium' 
+                              : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          <Icon className="w-4 h-4" />
+                          <span className="flex-1 text-left">{item.label}</span>
+                          <ChevronRight className="w-4 h-4 text-gray-400" />
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            </Card>
-
-            {/* Section 2: Categories */}
-            <Card className="p-4">
-              <div className="flex items-start space-x-3 mb-4">
-                <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-600 font-bold flex-shrink-0">
-                  2
-                </div>
-                <div className="flex-1">
-                  <h2 className="font-bold text-base mb-1">Em quais categorias?</h2>
-                  <p className="text-sm text-gray-600">
-                    Quanto mais categorias você selecionar, mais demandas receberá
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                {serviceCategories.map((category) => (
-                  <Card key={category.id} className="p-3 hover:shadow-sm transition-shadow">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center space-x-2 flex-1">
-                        <Checkbox
-                          checked={selectedCategories.includes(category.id)}
-                          onCheckedChange={() => handleCategoryToggle(category.id)}
-                          id={category.id}
-                        />
-                        <label htmlFor={category.id} className="font-semibold text-sm cursor-pointer">
-                          {category.name}
-                        </label>
-                      </div>
-                    </div>
-                    <ul className="ml-7 space-y-1">
-                      {category.items.map((item, idx) => (
-                        <li key={idx} className="text-xs text-gray-600">• {item}</li>
-                      ))}
-                    </ul>
-                  </Card>
-                ))}
-              </div>
+              ))}
             </Card>
           </div>
 
-          {/* Sidebar - Summary */}
-          <div className="lg:col-span-1">
-            <Card className="p-4 sticky top-20">
-              <h3 className="font-bold text-base mb-3">Recapitulativo</h3>
-              
-              <div className="space-y-3 mb-4">
-                <div className="flex items-center space-x-2 text-sm">
-                  <MapPin className="w-4 h-4 text-gray-500" />
-                  <span className="text-gray-700">{location}, +/- {radius[0]}km</span>
-                </div>
-                
-                <div>
-                  <p className="text-sm font-medium mb-1">Serviços: {selectedCategories.length} categorias</p>
-                </div>
-              </div>
+          {/* Main Content */}
+          <div className="lg:col-span-2">
+            <Card className="p-6">
+              <h2 className="text-2xl font-bold mb-6">Gerenciar meu perímetro</h2>
 
-              <Card className="p-3 bg-pink-50 border-pink-200 mb-4">
-                <p className="text-sm font-semibold text-pink-900 mb-1">
-                  {currentPlan.demandas}*
-                </p>
-                <p className="text-xs text-pink-700">
-                  * Média nos últimos 12 meses
-                </p>
-              </Card>
-
-              <div className="mb-4">
-                <Label className="text-sm mb-2 block">Selecione seu plano:</Label>
-                <div className="space-y-2">
-                  {plans.map((plan) => (
-                    <button
-                      key={plan.id}
-                      onClick={() => setSelectedPlan(plan.id)}
-                      className={`w-full p-3 rounded-lg border-2 transition-all text-left ${
-                        selectedPlan === plan.id
-                          ? 'border-green-500 bg-green-50'
-                          : 'border-gray-200 hover:border-green-300'
-                      }`}
-                    >
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="font-semibold text-sm">{plan.name}</p>
-                          <p className="text-xs text-gray-600">{plan.demandas}</p>
-                        </div>
-                        <p className="text-lg font-bold text-green-600">
-                          R$ {plan.price.toFixed(2)}
-                        </p>
-                      </div>
-                      {plan.popular && (
-                        <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded mt-1 inline-block">
-                          Mais Popular
+              {/* Intervention Radius */}
+              <div className="mb-6">
+                <Label className="text-sm font-semibold mb-2 block">Meu raio de intervenção:</Label>
+                <div className="bg-white border border-gray-300 rounded-lg p-3 mb-3">
+                  <div className="flex items-start gap-2">
+                    <MapPin className="w-5 h-5 text-gray-500 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{location}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Slider
+                          value={radius}
+                          onValueChange={setRadius}
+                          max={50}
+                          min={1}
+                          step={1}
+                          className="flex-1"
+                        />
+                        <span className="text-sm font-semibold text-pink-600 w-16 text-right">
+                          {radius[0]}km
                         </span>
-                      )}
-                    </button>
-                  ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="text-center mb-3">
-                <p className="text-2xl font-bold text-gray-900">
-                  R$ {currentPlan.price.toFixed(2)} <span className="text-base font-normal text-gray-600">/ mês</span>
-                </p>
-                <p className="text-xs text-gray-500">Sem compromisso</p>
+              {/* Intervention Domains */}
+              <div className="mb-6">
+                <Label className="text-sm font-semibold mb-2 block">Meus domínios de intervenção:</Label>
+                
+                {/* Services Dropdown */}
+                <div className="bg-white border border-gray-300 rounded-lg mb-3">
+                  <button
+                    onClick={() => setServicesExpanded(!servicesExpanded)}
+                    className="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors"
+                  >
+                    <span className="text-sm font-medium">Serviços ({totalSelectedItems})</span>
+                    <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${servicesExpanded ? 'rotate-180' : ''}`} />
+                  </button>
+                  {servicesExpanded && (
+                    <div className="border-t border-gray-200 p-3 space-y-2">
+                      {serviceCategories.map((category) => (
+                        <div key={category.id} className="flex items-center gap-2">
+                          <Checkbox
+                            checked={selectedCategories.includes(category.id)}
+                            onCheckedChange={() => handleCategoryToggle(category.id)}
+                            id={`service-${category.id}`}
+                          />
+                          <label htmlFor={`service-${category.id}`} className="text-sm cursor-pointer flex-1">
+                            {category.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Objects Dropdown */}
+                <div className="bg-white border border-gray-300 rounded-lg">
+                  <button
+                    onClick={() => setObjectsExpanded(!objectsExpanded)}
+                    className="w-full flex items-center justify-between p-3 hover:bg-gray-50 transition-colors"
+                  >
+                    <span className="text-sm font-medium">Objetos (3)</span>
+                    <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${objectsExpanded ? 'rotate-180' : ''}`} />
+                  </button>
+                  {objectsExpanded && (
+                    <div className="border-t border-gray-200 p-3 space-y-2">
+                      <div className="text-sm text-gray-600">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Checkbox checked={true} id="obj1" />
+                          <label htmlFor="obj1">Móveis e eletrodomésticos</label>
+                        </div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Checkbox checked={true} id="obj2" />
+                          <label htmlFor="obj2">Ferramentas e equipamentos</label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Checkbox checked={true} id="obj3" />
+                          <label htmlFor="obj3">Materiais de construção</label>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
+              {/* Notifications */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between bg-white border border-gray-300 rounded-lg p-3">
+                  <div className="flex items-center gap-2">
+                    <Bell className="w-5 h-5 text-gray-500" />
+                    <span className="text-sm font-medium">Notificações ativadas</span>
+                  </div>
+                  <Check className="w-5 h-5 text-green-600" />
+                </div>
+              </div>
+
+              {/* Update Button */}
               <Button
-                onClick={handleFinalize}
-                className="w-full bg-pink-500 hover:bg-pink-600 text-white h-11"
+                onClick={handleUpdatePerimeter}
+                className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-full h-11 font-semibold"
               >
-                Finalizar Assinatura
+                Modificar meu perímetro
               </Button>
+            </Card>
+          </div>
+
+          {/* Upgrade Card */}
+          <div className="lg:col-span-1">
+            <Card className="p-6 bg-gradient-to-br from-orange-400 to-pink-500 text-white">
+              <h3 className="text-xl font-bold mb-4">Passe para a velocidade superior!</h3>
+              
+              <div className="space-y-3 mb-6">
+                <div className="flex items-start gap-2">
+                  <Check className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm">Responder às demandas ilimitadas</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Check className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm">Publicar até 50 fotos das minhas realizações</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Check className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm">Aumentar a visibilidade do meu perfil</span>
+                </div>
+              </div>
 
               <Button
                 onClick={handleFreeTrial}
-                variant="outline"
-                className="w-full border-2 border-green-500 text-green-600 hover:bg-green-50 h-11 font-semibold mt-3"
+                className="w-full bg-white text-pink-600 hover:bg-gray-100 rounded-full h-11 font-bold mb-3"
               >
-                🎁 Iniciar Teste Grátis (3 dias)
+                Eu me inscrevo
               </Button>
 
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="space-y-2 text-xs text-gray-600">
-                  <div className="flex items-start gap-2">
-                    <Check className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span>Cancele quando quiser</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Check className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span>Sem taxas de cancelamento</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Check className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-                    <span>Suporte prioritário 24/7</span>
-                  </div>
-                </div>
-              </div>
+              <p className="text-xs text-center text-white/90">
+                A partir de 9,99€ / mês, sem compromisso
+              </p>
             </Card>
           </div>
         </div>
