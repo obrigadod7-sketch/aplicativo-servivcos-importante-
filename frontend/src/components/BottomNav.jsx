@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Users, Plus, Bell, MessageCircle } from 'lucide-react';
+import { Home, Users, Plus, BarChart3, MessageCircle } from 'lucide-react';
 
 const BottomNav = () => {
   const navigate = useNavigate();
@@ -40,15 +40,12 @@ const BottomNav = () => {
         </span>
       </button>
       <button
-        onClick={() => navigate('/assinatura')}
-        className="flex flex-col items-center gap-1 p-2 min-w-[60px] relative"
+        onClick={() => navigate('/dashboard')}
+        className="flex flex-col items-center gap-1 p-2 min-w-[60px]"
       >
-        <div className="relative">
-          <Bell className={`w-6 h-6 ${isActive('/assinatura') ? 'text-gray-900' : 'text-gray-400'}`} />
-          <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-white text-[9px] font-semibold">1</div>
-        </div>
-        <span className={`text-[10px] ${isActive('/assinatura') ? 'text-gray-900' : 'text-gray-500'}`}>
-          Abonnement
+        <BarChart3 className={`w-6 h-6 ${isActive('/dashboard') ? 'text-gray-900' : 'text-gray-400'}`} />
+        <span className={`text-[10px] ${isActive('/dashboard') ? 'text-gray-900' : 'text-gray-500'}`}>
+          Dashboard
         </span>
       </button>
       <button

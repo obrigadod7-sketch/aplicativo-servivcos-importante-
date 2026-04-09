@@ -16,7 +16,7 @@ import './App.css';
 
 function BottomNavWrapper() {
   const location = useLocation();
-  const showBottomNav = ['/feed', '/mensagens', '/ofertantes', '/assinatura', '/perfil'].includes(location.pathname);
+  const showBottomNav = ['/feed', '/mensagens', '/ofertantes', '/dashboard', '/perfil'].includes(location.pathname);
   
   return showBottomNav ? <BottomNav /> : null;
 }
