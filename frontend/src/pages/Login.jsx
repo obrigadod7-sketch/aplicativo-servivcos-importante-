@@ -78,6 +78,8 @@ const Login = () => {
 
       const { latitude, longitude } = position.coords;
       
+      console.log('✅ Localização obtida:', latitude, longitude);
+      
       // Usar API BigDataCloud (gratuita e sem necessidade de API key)
       try {
         const response = await fetch(
@@ -90,6 +92,8 @@ const Login = () => {
         
         const data = await response.json();
         
+        console.log('📍 Dados da API:', data);
+        
         if (data) {
           // Montar endereço no formato brasileiro
           const addressParts = [];
@@ -101,34 +105,36 @@ const Login = () => {
           
           const address = addressParts.filter(part => part).join(', ');
           
+          console.log('🏠 Endereço montado:', address);
+          
           if (address) {
             setRegisterData(prev => ({ ...prev, postalAddress: address }));
             
             toast({
               title: 'Localização detectada!',
-              description: 'Endereço preenchido automaticamente'
+              description: 'Endereço preenchido automaticamente',
+              duration: 3000
             });
           } else {
             throw new Error('Endereço não encontrado');
           }
         }
       } catch (apiError) {
-        console.error('Erro na API de geocoding:', apiError);
+        console.error('❌ Erro na API de geocoding:', apiError);
         
-        // Fallback: usar apenas as coordenadas
-        const simpleAddress = `Lat: ${latitude.toFixed(4)}, Long: ${longitude.toFixed(4)}`;
-        setRegisterData(prev => ({ ...prev, postalAddress: simpleAddress }));
-        
+        // NÃO preencher nada em caso de erro - deixar usuário digitar
         toast({
-          title: 'Localização aproximada',
-          description: 'Por favor, complete seu endereço completo',
+          title: 'Não foi possível obter endereço',
+          description: 'Por favor, digite seu endereço manualmente',
+          variant: 'destructive'
         });
       }
     } catch (error) {
-      console.error('Erro ao obter localização:', error);
+      console.error('❌ Erro ao obter localização:', error);
       
       let errorMessage = 'Por favor, digite seu endereço manualmente';
       
+      // Mensagens específicas por tipo de erro
       if (error.code === 1) {
         errorMessage = 'Permissão de localização negada. Ative nas configurações do navegador.';
       } else if (error.code === 2) {
@@ -140,8 +146,11 @@ const Login = () => {
       toast({
         title: 'Erro ao detectar localização',
         description: errorMessage,
-        variant: 'destructive'
+        variant: 'destructive',
+        duration: 5000
       });
+      
+      // NÃO preencher nada - deixar campo vazio para usuário digitar
     } finally {
       setLoadingLocation(false);
     }
