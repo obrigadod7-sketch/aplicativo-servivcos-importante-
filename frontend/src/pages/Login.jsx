@@ -52,46 +52,99 @@ const Login = () => {
   const handleGetLocation = async () => {
     setLoadingLocation(true);
     
-    if ("geolocation" in navigator) {
-      try {
-        const position = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject);
-        });
-
-        const { latitude, longitude } = position.coords;
-        
-        // Usar API de geocoding reverso para obter endereço
-        // Para Brasil: ViaCEP com coordenadas ou OpenStreetMap Nominatim
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
-        );
-        const data = await response.json();
-        
-        if (data && data.address) {
-          const address = `${data.address.road || ''}, ${data.address.suburb || ''}, ${data.address.city || ''} - ${data.address.postcode || ''}`.trim();
-          setRegisterData(prev => ({ ...prev, postalAddress: address }));
-          
-          toast({
-            title: 'Localização detectada!',
-            description: 'Endereço preenchido automaticamente'
-          });
-        }
-      } catch (error) {
-        toast({
-          title: 'Erro ao detectar localização',
-          description: 'Por favor, digite seu endereço manualmente',
-          variant: 'destructive'
-        });
-      }
-    } else {
+    if (!("geolocation" in navigator)) {
       toast({
         title: 'Geolocalização não suportada',
         description: 'Seu navegador não suporta detecção de localização',
         variant: 'destructive'
       });
+      setLoadingLocation(false);
+      return;
     }
-    
-    setLoadingLocation(false);
+
+    try {
+      // Solicitar permissão e obter coordenadas
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          resolve, 
+          reject,
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          }
+        );
+      });
+
+      const { latitude, longitude } = position.coords;
+      
+      // Usar API BigDataCloud (gratuita e sem necessidade de API key)
+      try {
+        const response = await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=pt`
+        );
+        
+        if (!response.ok) {
+          throw new Error('Falha na API de geocoding');
+        }
+        
+        const data = await response.json();
+        
+        if (data) {
+          // Montar endereço no formato brasileiro
+          const addressParts = [];
+          
+          if (data.locality) addressParts.push(data.locality);
+          if (data.city) addressParts.push(data.city);
+          if (data.principalSubdivision) addressParts.push(data.principalSubdivision);
+          if (data.postcode) addressParts.push(data.postcode);
+          
+          const address = addressParts.filter(part => part).join(', ');
+          
+          if (address) {
+            setRegisterData(prev => ({ ...prev, postalAddress: address }));
+            
+            toast({
+              title: 'Localização detectada!',
+              description: 'Endereço preenchido automaticamente'
+            });
+          } else {
+            throw new Error('Endereço não encontrado');
+          }
+        }
+      } catch (apiError) {
+        console.error('Erro na API de geocoding:', apiError);
+        
+        // Fallback: usar apenas as coordenadas
+        const simpleAddress = `Lat: ${latitude.toFixed(4)}, Long: ${longitude.toFixed(4)}`;
+        setRegisterData(prev => ({ ...prev, postalAddress: simpleAddress }));
+        
+        toast({
+          title: 'Localização aproximada',
+          description: 'Por favor, complete seu endereço completo',
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao obter localização:', error);
+      
+      let errorMessage = 'Por favor, digite seu endereço manualmente';
+      
+      if (error.code === 1) {
+        errorMessage = 'Permissão de localização negada. Ative nas configurações do navegador.';
+      } else if (error.code === 2) {
+        errorMessage = 'Não foi possível determinar sua localização.';
+      } else if (error.code === 3) {
+        errorMessage = 'Tempo esgotado ao tentar obter localização.';
+      }
+      
+      toast({
+        title: 'Erro ao detectar localização',
+        description: errorMessage,
+        variant: 'destructive'
+      });
+    } finally {
+      setLoadingLocation(false);
+    }
   };
 
   const handleRegister = (e) => {
