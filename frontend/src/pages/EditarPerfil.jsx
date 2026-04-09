@@ -27,14 +27,37 @@ const EditarPerfil = () => {
     'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=400&h=300&fit=crop'
   ]);
 
+  // Lista de imagens de capa válidas
+  const availableCoverImages = [
+    'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=1200&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1200&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=1200&h=400&fit=crop'
+  ];
+
+  // Lista de fotos válidas para trabalhos
+  const availableWorkPhotos = [
+    'https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1556911220-bff31c812dba?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=400&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1620626011761-996317b8d101?w=400&h=300&fit=crop'
+  ];
+
   const handleAddWorkPhoto = () => {
     if (workPhotos.length < 6) {
-      const newPhoto = `https://images.unsplash.com/photo-${Math.floor(Math.random() * 1000000000)}?w=400&h=300&fit=crop`;
-      setWorkPhotos([...workPhotos, newPhoto]);
-      toast({
-        title: 'Foto adicionada',
-        description: 'Foto de trabalho adicionada com sucesso'
-      });
+      // Encontra fotos que ainda não foram adicionadas
+      const unusedPhotos = availableWorkPhotos.filter(photo => !workPhotos.includes(photo));
+      if (unusedPhotos.length > 0) {
+        const newPhoto = unusedPhotos[0];
+        setWorkPhotos([...workPhotos, newPhoto]);
+        toast({
+          title: 'Foto adicionada',
+          description: 'Foto de trabalho adicionada com sucesso'
+        });
+      }
     }
   };
 
@@ -82,10 +105,16 @@ const EditarPerfil = () => {
               src={profileData.coverImage} 
               alt="Capa" 
               className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.src = 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=400&fit=crop';
+              }}
             />
             <button 
               onClick={() => {
-                const newCover = `https://images.unsplash.com/photo-${Math.floor(Math.random() * 1000000000)}?w=1200&h=400&fit=crop`;
+                // Encontra a próxima imagem de capa disponível
+                const currentIndex = availableCoverImages.indexOf(profileData.coverImage);
+                const nextIndex = (currentIndex + 1) % availableCoverImages.length;
+                const newCover = availableCoverImages[nextIndex];
                 setProfileData({ ...profileData, coverImage: newCover });
                 toast({ title: 'Imagem de capa atualizada' });
               }}
@@ -195,6 +224,9 @@ const EditarPerfil = () => {
                   src={photo} 
                   alt={`Trabalho ${index + 1}`} 
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.src = 'https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=400&h=300&fit=crop';
+                  }}
                 />
                 <button
                   onClick={() => handleRemoveWorkPhoto(index)}
