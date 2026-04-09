@@ -100,7 +100,11 @@ const Inicio = () => {
           </div>
           <div className="relative">
             <div className="rounded-2xl overflow-hidden shadow-2xl">
-              <img src="https://images.unsplash.com/photo-1556228720-195a672e8a03?w=1200&h=800&fit=crop&q=90" alt="Profissionais" className="w-full h-[500px] object-cover" />
+              <img 
+                src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1Mjh8MHwxfHNlYXJjaHwxfHxjb25zdHJ1Y3Rpb24lMjB3b3JrZXJzfGVufDB8fHx8MTc3NTcwMDMxOHww&ixlib=rb-4.1.0&q=85" 
+                alt="Profissionais trabalhando em Jataí" 
+                className="w-full h-[500px] object-cover" 
+              />
             </div>
           </div>
         </div>
@@ -111,7 +115,7 @@ const Inicio = () => {
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between">
           <div className="mb-4 md:mb-0">
             <p className="text-white text-lg font-medium mb-1">
-              Junte-se a milhares de brasileiros no ServiVizinhos
+              Junte-se a milhares de profissionais em Jataí Região Trabalho
             </p>
             <p className="text-green-50 text-sm">
               Encontre serviços e empregos perto de você
