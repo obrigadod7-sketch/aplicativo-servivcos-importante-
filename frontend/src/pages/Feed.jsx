@@ -204,15 +204,13 @@ const Feed = () => {
     category: ''
   });
 
-  // Check if user is admin
+  // Check if user is admin and load posts
   const [isAdmin, setIsAdmin] = useState(false);
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     setIsAdmin(user.email === 'francesdefranceff@gmail.com');
-  }, []);
-
-  // Load posts (user posts + mock posts)
-  useEffect(() => {
+    
+    // Load saved posts from localStorage and combine with mock posts
     const userPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
     const allPosts = [...userPosts, ...mockPosts];
     setPosts(allPosts);

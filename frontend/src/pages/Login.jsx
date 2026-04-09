@@ -221,10 +221,13 @@ const Login = () => {
     
     toast({
       title: 'Cadastro realizado!',
-      description: 'Bem-vindo ao AlloVoisins'
+      description: 'Bem-vindo ao Jataí Região Trabalho',
+      duration: 3000
     });
     
-    navigate('/feed');
+    setTimeout(() => {
+      navigate('/feed');
+    }, 1000);
   };
 
   const handleTypeSelect = (type) => {
