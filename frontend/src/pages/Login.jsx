@@ -63,18 +63,35 @@ const Login = () => {
     }
 
     try {
-      // Solicitar permissão e obter coordenadas
-      const position = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          resolve, 
-          reject,
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-          }
-        );
-      });
+      // Tentar primeiro com alta precisão
+      let position;
+      try {
+        position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            resolve, 
+            reject,
+            {
+              enableHighAccuracy: true,
+              timeout: 30000, // Aumentado para 30 segundos
+              maximumAge: 60000 // Aceitar cache de até 1 minuto
+            }
+          );
+        });
+      } catch (highAccError) {
+        // Se falhar com alta precisão, tentar com baixa precisão
+        console.log('⚠️ Alta precisão falhou, tentando baixa precisão...');
+        position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            resolve, 
+            reject,
+            {
+              enableHighAccuracy: false,
+              timeout: 15000, // 15 segundos para baixa precisão
+              maximumAge: 300000 // Aceitar cache de até 5 minutos
+            }
+          );
+        });
+      }
 
       const { latitude, longitude } = position.coords;
       
@@ -83,7 +100,8 @@ const Login = () => {
       // Usar API BigDataCloud (gratuita e sem necessidade de API key)
       try {
         const response = await fetch(
-          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=pt`
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=pt`,
+          { signal: AbortSignal.timeout(10000) } // Timeout de 10s para API
         );
         
         if (!response.ok) {
@@ -98,7 +116,13 @@ const Login = () => {
           // Montar endereço no formato brasileiro
           const addressParts = [];
           
-          if (data.locality) addressParts.push(data.locality);
+          // Priorizar informações mais específicas
+          if (data.localityInfo?.administrative?.[3]?.name) {
+            addressParts.push(data.localityInfo.administrative[3].name);
+          } else if (data.locality) {
+            addressParts.push(data.locality);
+          }
+          
           if (data.city) addressParts.push(data.city);
           if (data.principalSubdivision) addressParts.push(data.principalSubdivision);
           if (data.postcode) addressParts.push(data.postcode);
@@ -112,7 +136,7 @@ const Login = () => {
             
             toast({
               title: 'Localização detectada!',
-              description: 'Endereço preenchido automaticamente',
+              description: address,
               duration: 3000
             });
           } else {
@@ -122,29 +146,35 @@ const Login = () => {
       } catch (apiError) {
         console.error('❌ Erro na API de geocoding:', apiError);
         
-        // NÃO preencher nada em caso de erro - deixar usuário digitar
+        // Usar apenas cidade/estado se API falhar mas temos coordenadas
+        const simpleAddress = `Localização detectada (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+        
         toast({
-          title: 'Não foi possível obter endereço',
-          description: 'Por favor, digite seu endereço manualmente',
-          variant: 'destructive'
+          title: 'Localização aproximada obtida',
+          description: 'Por favor, complete seu endereço completo',
+          duration: 3000
         });
       }
     } catch (error) {
       console.error('❌ Erro ao obter localização:', error);
       
+      let errorTitle = 'Erro ao detectar localização';
       let errorMessage = 'Por favor, digite seu endereço manualmente';
       
       // Mensagens específicas por tipo de erro
       if (error.code === 1) {
-        errorMessage = 'Permissão de localização negada. Ative nas configurações do navegador.';
+        errorTitle = 'Permissão negada';
+        errorMessage = 'Você negou acesso à localização. Ative nas configurações do navegador.';
       } else if (error.code === 2) {
-        errorMessage = 'Não foi possível determinar sua localização.';
+        errorTitle = 'Localização indisponível';
+        errorMessage = 'Não foi possível determinar sua localização. Verifique se o GPS está ativo.';
       } else if (error.code === 3) {
-        errorMessage = 'Tempo esgotado ao tentar obter localização.';
+        errorTitle = 'Tempo esgotado';
+        errorMessage = 'A localização demorou muito. Tente novamente ou digite manualmente.';
       }
       
       toast({
-        title: 'Erro ao detectar localização',
+        title: errorTitle,
         description: errorMessage,
         variant: 'destructive',
         duration: 5000
