@@ -192,28 +192,28 @@ const Perfil = () => {
         </div>
 
         {/* Profile Info */}
-        <div className="bg-white px-8 pt-20 pb-6 border-b border-gray-200">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{profile.name}</h1>
-              <p className="text-base text-gray-600 mb-2">{profile.profession}</p>
+        <div className="bg-white px-4 sm:px-6 lg:px-8 pt-20 pb-6 border-b border-gray-200 overflow-x-hidden">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
+            <div className="w-full md:w-auto">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 break-words">{profile.name}</h1>
+              <p className="text-sm sm:text-base text-gray-600 mb-2 break-words">{profile.profession}</p>
               <div className="flex items-center gap-2 text-gray-600">
-                <MapPin className="w-4 h-4" />
-                <span className="text-sm">{profile.location}</span>
+                <MapPin className="w-4 h-4 flex-shrink-0" />
+                <span className="text-sm break-words">{profile.location}</span>
               </div>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
               <Button
                 onClick={() => window.location.href = '/editar-perfil'}
                 variant="outline"
-                className="border-2 border-gray-900 text-gray-900 rounded-full px-6 hover:bg-gray-900 hover:text-white"
+                className="border-2 border-gray-900 text-gray-900 rounded-full px-6 hover:bg-gray-900 hover:text-white w-full sm:w-auto"
               >
                 Editar perfil
               </Button>
               <Button
                 onClick={handleLogout}
                 variant="outline"
-                className="border-2 border-red-500 text-red-500 rounded-full px-6 hover:bg-red-500 hover:text-white flex items-center gap-2"
+                className="border-2 border-red-500 text-red-500 rounded-full px-6 hover:bg-red-500 hover:text-white flex items-center gap-2 justify-center w-full sm:w-auto"
               >
                 <LogOut className="w-4 h-4" />
                 Sair
@@ -222,10 +222,10 @@ const Perfil = () => {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-8 border-b border-gray-200">
+          <div className="flex gap-4 sm:gap-8 border-b border-gray-200 overflow-x-auto hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
             <button
               onClick={() => setActiveTab('presentation')}
-              className={`pb-3 text-sm font-medium transition-colors ${
+              className={`pb-3 text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'presentation'
                   ? 'border-b-2 border-gray-900 text-gray-900'
                   : 'text-gray-500 hover:text-gray-700'
@@ -235,7 +235,7 @@ const Perfil = () => {
             </button>
             <button
               onClick={() => setActiveTab('photos')}
-              className={`pb-3 text-sm font-medium transition-colors ${
+              className={`pb-3 text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'photos'
                   ? 'border-b-2 border-gray-900 text-gray-900'
                   : 'text-gray-500 hover:text-gray-700'
@@ -245,7 +245,7 @@ const Perfil = () => {
             </button>
             <button
               onClick={() => setActiveTab('avis')}
-              className={`pb-3 text-sm font-medium transition-colors ${
+              className={`pb-3 text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'avis'
                   ? 'border-b-2 border-gray-900 text-gray-900'
                   : 'text-gray-500 hover:text-gray-700'
@@ -255,7 +255,7 @@ const Perfil = () => {
             </button>
             <button
               onClick={() => setActiveTab('activite')}
-              className={`pb-3 text-sm font-medium transition-colors ${
+              className={`pb-3 text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'activite'
                   ? 'border-b-2 border-gray-900 text-gray-900'
                   : 'text-gray-500 hover:text-gray-700'
@@ -269,7 +269,7 @@ const Perfil = () => {
         {/* Tab Content */}
         <div className="bg-white">
           {activeTab === 'presentation' && (
-            <div className="px-8 py-6">
+            <div className="px-4 sm:px-6 lg:px-8 py-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left Column */}
                 <div className="space-y-6">

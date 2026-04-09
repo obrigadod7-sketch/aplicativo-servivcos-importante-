@@ -62,6 +62,13 @@ const Login = () => {
       return;
     }
 
+    // Mostrar mensagem informativa antes de solicitar permissão
+    toast({
+      title: 'Solicitando permissão...',
+      description: 'Por favor, permita acesso à sua localização quando o navegador solicitar',
+      duration: 3000
+    });
+
     try {
       // Tentar primeiro com alta precisão
       let position;
@@ -72,8 +79,8 @@ const Login = () => {
             reject,
             {
               enableHighAccuracy: true,
-              timeout: 30000, // Aumentado para 30 segundos
-              maximumAge: 60000 // Aceitar cache de até 1 minuto
+              timeout: 30000,
+              maximumAge: 60000
             }
           );
         });
@@ -86,8 +93,8 @@ const Login = () => {
             reject,
             {
               enableHighAccuracy: false,
-              timeout: 15000, // 15 segundos para baixa precisão
-              maximumAge: 300000 // Aceitar cache de até 5 minutos
+              timeout: 15000,
+              maximumAge: 300000
             }
           );
         });
@@ -97,11 +104,11 @@ const Login = () => {
       
       console.log('✅ Localização obtida:', latitude, longitude);
       
-      // Usar API BigDataCloud (gratuita e sem necessidade de API key)
+      // Usar API BigDataCloud
       try {
         const response = await fetch(
           `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=pt`,
-          { signal: AbortSignal.timeout(10000) } // Timeout de 10s para API
+          { signal: AbortSignal.timeout(10000) }
         );
         
         if (!response.ok) {
@@ -113,10 +120,8 @@ const Login = () => {
         console.log('📍 Dados da API:', data);
         
         if (data) {
-          // Montar endereço no formato brasileiro
           const addressParts = [];
           
-          // Priorizar informações mais específicas
           if (data.localityInfo?.administrative?.[3]?.name) {
             addressParts.push(data.localityInfo.administrative[3].name);
           } else if (data.locality) {
@@ -135,9 +140,9 @@ const Login = () => {
             setRegisterData(prev => ({ ...prev, postalAddress: address }));
             
             toast({
-              title: 'Localização detectada!',
+              title: 'Localização detectada! ✅',
               description: address,
-              duration: 3000
+              duration: 4000
             });
           } else {
             throw new Error('Endereço não encontrado');
@@ -145,9 +150,6 @@ const Login = () => {
         }
       } catch (apiError) {
         console.error('❌ Erro na API de geocoding:', apiError);
-        
-        // Usar apenas cidade/estado se API falhar mas temos coordenadas
-        const simpleAddress = `Localização detectada (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
         
         toast({
           title: 'Localização aproximada obtida',
@@ -158,29 +160,26 @@ const Login = () => {
     } catch (error) {
       console.error('❌ Erro ao obter localização:', error);
       
-      let errorTitle = 'Erro ao detectar localização';
-      let errorMessage = 'Por favor, digite seu endereço manualmente';
+      let errorTitle = 'Permissão necessária';
+      let errorMessage = 'Para usar este recurso, você precisa permitir acesso à sua localização nas configurações do navegador.';
       
-      // Mensagens específicas por tipo de erro
       if (error.code === 1) {
-        errorTitle = 'Permissão negada';
-        errorMessage = 'Você negou acesso à localização. Ative nas configurações do navegador.';
+        errorTitle = '🔒 Permissão negada';
+        errorMessage = 'Você negou o acesso. Para ativar:\n1. Clique no ícone 🔒 ao lado da URL\n2. Permitir "Localização"\n3. Recarregue a página';
       } else if (error.code === 2) {
-        errorTitle = 'Localização indisponível';
-        errorMessage = 'Não foi possível determinar sua localização. Verifique se o GPS está ativo.';
+        errorTitle = '📍 GPS indisponível';
+        errorMessage = 'Ative o GPS do seu celular e tente novamente.';
       } else if (error.code === 3) {
-        errorTitle = 'Tempo esgotado';
-        errorMessage = 'A localização demorou muito. Tente novamente ou digite manualmente.';
+        errorTitle = '⏱️ Timeout';
+        errorMessage = 'A localização demorou muito. Verifique se o GPS está ativo e tente novamente.';
       }
       
       toast({
         title: errorTitle,
         description: errorMessage,
         variant: 'destructive',
-        duration: 5000
+        duration: 8000
       });
-      
-      // NÃO preencher nada - deixar campo vazio para usuário digitar
     } finally {
       setLoadingLocation(false);
     }
