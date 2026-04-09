@@ -9,6 +9,29 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Helvetica', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Prevenir zoom no mobile mas manter scroll */
+  touch-action: pan-y pan-x;
+  -webkit-touch-callout: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Desabilitar zoom em inputs no iOS */
+input,
+select,
+textarea {
+  font-size: 16px !important;
+}
+
+/* Prevenir zoom duplo clique */
+* {
+  touch-action: manipulation;
+}
+
+/* Imagens sempre nítidas */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  -ms-interpolation-mode: nearest-neighbor;
 }
 
 code {

@@ -254,18 +254,13 @@ const Feed = () => {
       return;
     }
 
-    // Use placeholder images if photos were selected
-    const photoUrls = selectedPhotos.length > 0 
-      ? [
-          'https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=600&h=400&fit=crop',
-          'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&h=400&fit=crop',
-          'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&h=400&fit=crop'
-        ].slice(0, selectedPhotos.length)
-      : [];
+    // Convert selected photos to base64 or keep URLs
+    const photoUrls = selectedPhotos.map(photo => photo.preview);
 
     // Create new mock post
     const newPost = {
       id: `new-${Date.now()}`,
+      userId: '1', // ID do usuário
       userName: 'Você',
       userAvatar: 'https://i.pravatar.cc/150?img=33',
       time: 'postado agora',
