@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { 
@@ -7,7 +8,27 @@ import {
 } from 'lucide-react';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [timeRange, setTimeRange] = useState('7days');
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Check if user is admin
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const adminEmail = 'francesdefranceff@gmail.com';
+    
+    if (user.email !== adminEmail) {
+      // Not admin - redirect to feed
+      navigate('/feed');
+    } else {
+      setIsAdmin(true);
+    }
+  }, [navigate]);
+
+  // Don't render dashboard if not admin
+  if (!isAdmin) {
+    return null;
+  }
 
   // Mock statistics
   const stats = {

@@ -1,12 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Users, Plus, BarChart3, MessageCircle } from 'lucide-react';
 
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isAdmin, setIsAdmin] = useState(false);
   
   const isActive = (path) => location.pathname === path;
+
+  // Check if user is admin
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    setIsAdmin(user.email === 'francesdefranceff@gmail.com');
+  }, []);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-2 flex items-center justify-around z-50 lg:hidden" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif' }}>
@@ -39,15 +46,17 @@ const BottomNav = () => {
           Demande
         </span>
       </button>
-      <button
-        onClick={() => navigate('/dashboard')}
-        className="flex flex-col items-center gap-1 p-2 min-w-[60px]"
-      >
-        <BarChart3 className={`w-6 h-6 ${isActive('/dashboard') ? 'text-gray-900' : 'text-gray-400'}`} />
-        <span className={`text-[10px] ${isActive('/dashboard') ? 'text-gray-900' : 'text-gray-500'}`}>
-          Dashboard
-        </span>
-      </button>
+      {isAdmin && (
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="flex flex-col items-center gap-1 p-2 min-w-[60px]"
+        >
+          <BarChart3 className={`w-6 h-6 ${isActive('/dashboard') ? 'text-gray-900' : 'text-gray-400'}`} />
+          <span className={`text-[10px] ${isActive('/dashboard') ? 'text-gray-900' : 'text-gray-500'}`}>
+            Dashboard
+          </span>
+        </button>
+      )}
       <button
         onClick={() => navigate('/mensagens')}
         className="flex flex-col items-center gap-1 p-2 min-w-[60px] relative"
