@@ -1,309 +1,492 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card } from '../components/ui/card';
-import { ArrowLeft, Mail, Lock, User, Phone, MapPin } from 'lucide-react';
+import { Checkbox } from '../components/ui/checkbox';
+import { ArrowLeft, X, Eye, EyeOff, MapPin, Loader2 } from 'lucide-react';
+import { useToast } from '../hooks/use-toast';
 
 const Login = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // 1: Email, 2: Password/Register choice, 3: Register form
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [formData, setFormData] = useState({
+  const { toast } = useToast();
+  const [showModal, setShowModal] = useState(false);
+  const [modalStep, setModalStep] = useState(1); // 1: Choose type, 2: Register form
+  const [accountType, setAccountType] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loadingLocation, setLoadingLocation] = useState(false);
+  
+  const [loginData, setLoginData] = useState({
     email: '',
-    password: '',
-    name: '',
-    phone: '',
-    address: ''
+    password: ''
   });
 
-  const handleEmailSubmit = (e) => {
-    e.preventDefault();
-    if (formData.email) {
-      setStep(2);
-    }
-  };
+  const [registerData, setRegisterData] = useState({
+    firstName: '',
+    lastName: '',
+    businessName: '',
+    profession: '',
+    postalAddress: '',
+    mobile: '',
+    email: '',
+    password: '',
+    receiveInfo: false,
+    acceptTerms: false
+  });
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (formData.password) {
-      // Mock login - store user in localStorage
+    if (loginData.email && loginData.password) {
       localStorage.setItem('user', JSON.stringify({ 
-        email: formData.email,
-        name: formData.name || 'Usuário'
+        email: loginData.email,
+        name: 'Usuário'
       }));
+      toast({
+        title: 'Login realizado!',
+        description: 'Bem-vindo de volta'
+      });
       navigate('/feed');
     }
+  };
+
+  const handleGetLocation = async () => {
+    setLoadingLocation(true);
+    
+    if ("geolocation" in navigator) {
+      try {
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject);
+        });
+
+        const { latitude, longitude } = position.coords;
+        
+        // Usar API de geocoding reverso para obter endereço
+        // Para Brasil: ViaCEP com coordenadas ou OpenStreetMap Nominatim
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`
+        );
+        const data = await response.json();
+        
+        if (data && data.address) {
+          const address = `${data.address.road || ''}, ${data.address.suburb || ''}, ${data.address.city || ''} - ${data.address.postcode || ''}`.trim();
+          setRegisterData(prev => ({ ...prev, postalAddress: address }));
+          
+          toast({
+            title: 'Localização detectada!',
+            description: 'Endereço preenchido automaticamente'
+          });
+        }
+      } catch (error) {
+        toast({
+          title: 'Erro ao detectar localização',
+          description: 'Por favor, digite seu endereço manualmente',
+          variant: 'destructive'
+        });
+      }
+    } else {
+      toast({
+        title: 'Geolocalização não suportada',
+        description: 'Seu navegador não suporta detecção de localização',
+        variant: 'destructive'
+      });
+    }
+    
+    setLoadingLocation(false);
   };
 
   const handleRegister = (e) => {
     e.preventDefault();
-    if (formData.name && formData.phone && formData.address) {
-      // Mock register
-      localStorage.setItem('user', JSON.stringify({ 
-        email: formData.email,
-        name: formData.name,
-        phone: formData.phone,
-        address: formData.address
-      }));
-      navigate('/feed');
+    
+    if (!registerData.acceptTerms) {
+      toast({
+        title: 'Termos obrigatórios',
+        description: 'Você deve aceitar os termos e condições',
+        variant: 'destructive'
+      });
+      return;
     }
+
+    const requiredFields = accountType === 'particular' 
+      ? ['firstName', 'lastName', 'postalAddress', 'mobile', 'email', 'password']
+      : ['businessName', 'profession', 'postalAddress', 'mobile', 'email', 'password'];
+
+    const missingFields = requiredFields.filter(field => !registerData[field]);
+    
+    if (missingFields.length > 0) {
+      toast({
+        title: 'Campos obrigatórios',
+        description: 'Por favor, preencha todos os campos',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    localStorage.setItem('user', JSON.stringify({ 
+      email: registerData.email,
+      name: registerData.firstName ? `${registerData.firstName} ${registerData.lastName}` : registerData.businessName,
+      accountType: accountType,
+      ...registerData
+    }));
+    
+    toast({
+      title: 'Cadastro realizado!',
+      description: 'Bem-vindo ao AlloVoisins'
+    });
+    
+    navigate('/feed');
   };
 
-  const handleBack = () => {
-    if (step === 2) {
-      setStep(1);
-      setIsRegistering(false);
-    } else if (step === 3) {
-      setStep(2);
+  const handleTypeSelect = (type) => {
+    setAccountType(type);
+    setModalStep(2);
+  };
+
+  const getFieldsByType = () => {
+    if (accountType === 'particular') {
+      return (
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              placeholder="Primeiro nome"
+              value={registerData.firstName}
+              onChange={(e) => setRegisterData({ ...registerData, firstName: e.target.value })}
+              className="h-11"
+              required
+            />
+            <Input
+              placeholder="Sobrenome"
+              value={registerData.lastName}
+              onChange={(e) => setRegisterData({ ...registerData, lastName: e.target.value })}
+              className="h-11"
+              required
+            />
+          </div>
+        </>
+      );
+    } else {
+      return (
+        <>
+          <Input
+            placeholder="Nome comercial"
+            value={registerData.businessName}
+            onChange={(e) => setRegisterData({ ...registerData, businessName: e.target.value })}
+            className="h-11"
+            required
+          />
+          <Input
+            placeholder="Profissão"
+            value={registerData.profession}
+            onChange={(e) => setRegisterData({ ...registerData, profession: e.target.value })}
+            className="h-11"
+            required
+          />
+        </>
+      );
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif' }}>
+    <div className="min-h-screen bg-gray-100 relative" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif' }}>
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center"
+        style={{
+          backgroundImage: 'linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url(https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=1920&h=1080&fit=crop)',
+        }}
+      />
+
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-4 py-3">
-        <div className="max-w-md mx-auto flex items-center justify-between">
-          {step > 1 && (
-            <button onClick={handleBack} className="p-1 hover:bg-gray-100 rounded-full">
-              <ArrowLeft className="w-5 h-5 text-gray-700" />
-            </button>
-          )}
-          <div className="flex-1 flex justify-center">
-            <span className="text-lg font-bold">
+      <header className="relative z-10 bg-white/80 backdrop-blur-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-bold">
               <span className="text-green-500">allo</span>
               <span className="text-pink-500">voisins</span>
             </span>
+            <p className="text-xs text-gray-500 hidden sm:block">FACILITADOR DE PROJETOS</p>
           </div>
-          {step > 1 && <div className="w-9" />}
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setShowModal(true)}
+              className="text-sm text-gray-700 hover:text-gray-900"
+            >
+              S'inscrire
+            </button>
+            <Button
+              onClick={() => setShowModal(true)}
+              variant="outline"
+              className="rounded-full border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white"
+            >
+              Se connecter
+            </Button>
+          </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center px-4 py-8">
-        <Card className="w-full max-w-md p-6 bg-white border border-gray-200 shadow-sm">
-          {/* Step 1: Email Entry */}
-          {step === 1 && (
-            <form onSubmit={handleEmailSubmit} className="space-y-4">
-              <div className="text-center mb-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-2">
-                  Bem-vindo ao AlloVoisins
-                </h2>
-                <p className="text-sm text-gray-600">
-                  Conecte-se com vizinhos e prestadores de serviços
-                </p>
-              </div>
+      <div className="relative z-10 max-w-7xl mx-auto px-4 py-12">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            Prestações de serviços
+            <br />
+            <span className="text-pink-500">e aluguel de material</span>
+          </h1>
+          <p className="text-lg text-gray-700">
+            Mais de 3 milhões de profissionais por toda a França
+          </p>
+        </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-700 block">
-                  Endereço de e-mail
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <Input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="seu.email@exemplo.com"
-                    className="h-10 pl-10 text-sm bg-white border-gray-300"
-                    required
-                  />
-                </div>
-              </div>
-
-              <Button 
-                type="submit"
-                className="w-full bg-green-500 hover:bg-green-600 text-white rounded-full h-10 font-semibold shadow-sm text-sm"
+        {/* Quick Login Card */}
+        <Card className="max-w-md mx-auto p-6 bg-white/90 backdrop-blur-sm">
+          <h2 className="text-xl font-bold text-center mb-6">Fazer login</h2>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <Input
+              type="email"
+              placeholder="E-mail"
+              value={loginData.email}
+              onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+              className="h-11"
+              required
+            />
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                placeholder="Senha"
+                value={loginData.password}
+                onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                className="h-11 pr-10"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2"
               >
-                Continuar
-              </Button>
-
-              <div className="text-center">
-                <p className="text-xs text-gray-500">
-                  Ao continuar, você concorda com nossos{' '}
-                  <a href="#" className="text-green-600 hover:underline">Termos de Serviço</a>
-                  {' '}e{' '}
-                  <a href="#" className="text-green-600 hover:underline">Política de Privacidade</a>
-                </p>
-              </div>
-            </form>
-          )}
-
-          {/* Step 2: Login or Register Choice */}
-          {step === 2 && !isRegistering && (
-            <div className="space-y-4">
-              <div className="text-center mb-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-2">
-                  {formData.email}
-                </h2>
-                <p className="text-sm text-gray-600">
-                  Escolha como deseja continuar
-                </p>
-              </div>
-
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-gray-700 block">
-                    Senha
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      placeholder="Digite sua senha"
-                      className="h-10 pl-10 text-sm bg-white border-gray-300"
-                      required
-                    />
-                  </div>
-                  <a href="#" className="text-xs text-green-600 hover:underline block text-right">
-                    Esqueceu sua senha?
-                  </a>
-                </div>
-
-                <Button 
-                  type="submit"
-                  className="w-full bg-green-500 hover:bg-green-600 text-white rounded-full h-10 font-semibold shadow-sm text-sm"
-                >
-                  Entrar
-                </Button>
-              </form>
-
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300"></div>
-                </div>
-                <div className="relative flex justify-center text-xs">
-                  <span className="px-2 bg-white text-gray-500">ou</span>
-                </div>
-              </div>
-
-              <Button 
+                {showPassword ? <EyeOff className="w-5 h-5 text-gray-500" /> : <Eye className="w-5 h-5 text-gray-500" />}
+              </button>
+            </div>
+            <Button
+              type="submit"
+              className="w-full bg-gray-900 hover:bg-gray-800 text-white h-11 rounded-full font-semibold"
+            >
+              Entrar
+            </Button>
+            <div className="text-center">
+              <button
                 type="button"
                 onClick={() => {
-                  setIsRegistering(true);
-                  setStep(3);
+                  setShowModal(true);
+                  setModalStep(1);
                 }}
-                variant="outline"
-                className="w-full border-2 border-green-500 text-green-600 hover:bg-green-50 rounded-full h-10 font-semibold text-sm"
+                className="text-sm text-pink-600 hover:text-pink-700 font-medium"
               >
-                Criar nova conta
-              </Button>
+                Criar uma conta
+              </button>
             </div>
-          )}
-
-          {/* Step 3: Registration Form */}
-          {step === 3 && isRegistering && (
-            <form onSubmit={handleRegister} className="space-y-4">
-              <div className="text-center mb-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-2">
-                  Criar sua conta
-                </h2>
-                <p className="text-sm text-gray-600">
-                  Preencha seus dados para começar
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-gray-700 block">
-                    Nome completo
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="João Silva"
-                      className="h-10 pl-10 text-sm bg-white border-gray-300"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-gray-700 block">
-                    Telefone
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="(11) 99999-9999"
-                      className="h-10 pl-10 text-sm bg-white border-gray-300"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-gray-700 block">
-                    Endereço
-                  </label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input
-                      type="text"
-                      value={formData.address}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      placeholder="Rua, número - Bairro, Cidade"
-                      className="h-10 pl-10 text-sm bg-white border-gray-300"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-gray-700 block">
-                    Criar senha
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      placeholder="Mínimo 6 caracteres"
-                      className="h-10 pl-10 text-sm bg-white border-gray-300"
-                      required
-                      minLength={6}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <Button 
-                type="submit"
-                className="w-full bg-green-500 hover:bg-green-600 text-white rounded-full h-10 font-semibold shadow-sm text-sm"
-              >
-                Criar conta
-              </Button>
-
-              <div className="text-center">
-                <p className="text-xs text-gray-500">
-                  Ao criar sua conta, você concorda com nossos{' '}
-                  <a href="#" className="text-green-600 hover:underline">Termos</a>
-                  {' '}e{' '}
-                  <a href="#" className="text-green-600 hover:underline">Privacidade</a>
-                </p>
-              </div>
-            </form>
-          )}
+          </form>
         </Card>
       </div>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 px-4 py-3">
-        <div className="max-w-md mx-auto text-center">
-          <p className="text-xs text-gray-500">
-            © 2026 AlloVoisins. Todos os direitos reservados.
-          </p>
+      {/* Registration Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md bg-white rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                {modalStep === 2 && (
+                  <button
+                    onClick={() => setModalStep(1)}
+                    className="p-2 hover:bg-gray-100 rounded-full"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                )}
+                <div className="flex-1" />
+                <button
+                  onClick={() => {
+                    setShowModal(false);
+                    setModalStep(1);
+                    setAccountType('');
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-full"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Step 1: Choose Account Type */}
+              {modalStep === 1 && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-bold text-center">Eu me inscrevo como:</h2>
+                  
+                  <div className="space-y-3">
+                    <Button
+                      onClick={() => handleTypeSelect('particular')}
+                      variant="outline"
+                      className="w-full h-12 text-base border-2 border-gray-300 hover:border-pink-500 hover:bg-pink-50 rounded-full"
+                    >
+                      Particular
+                    </Button>
+
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 h-px bg-gray-300" />
+                      <span className="text-sm text-gray-500">ou</span>
+                      <div className="flex-1 h-px bg-gray-300" />
+                    </div>
+
+                    <Button
+                      onClick={() => handleTypeSelect('auto-entrepreneur')}
+                      variant="outline"
+                      className="w-full h-12 text-base border-2 border-gray-300 hover:border-pink-500 hover:bg-pink-50 rounded-full"
+                    >
+                      Auto-empresário
+                    </Button>
+
+                    <Button
+                      onClick={() => handleTypeSelect('enterprise')}
+                      variant="outline"
+                      className="w-full h-12 text-base border-2 border-gray-300 hover:border-pink-500 hover:bg-pink-50 rounded-full"
+                    >
+                      Empresa
+                    </Button>
+                  </div>
+
+                  <p className="text-center text-sm text-gray-500">Etapa 1/2</p>
+                </div>
+              )}
+
+              {/* Step 2: Registration Form */}
+              {modalStep === 2 && (
+                <form onSubmit={handleRegister} className="space-y-4">
+                  {getFieldsByType()}
+
+                  <div className="relative">
+                    <Input
+                      placeholder="Endereço postal"
+                      value={registerData.postalAddress}
+                      onChange={(e) => setRegisterData({ ...registerData, postalAddress: e.target.value })}
+                      className="h-11 pr-10"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={handleGetLocation}
+                      disabled={loadingLocation}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-pink-600 hover:text-pink-700"
+                      title="Detectar localização automaticamente"
+                    >
+                      {loadingLocation ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <MapPin className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
+
+                  <Input
+                    type="tel"
+                    placeholder="Celular"
+                    value={registerData.mobile}
+                    onChange={(e) => setRegisterData({ ...registerData, mobile: e.target.value })}
+                    className="h-11"
+                    required
+                  />
+
+                  <Input
+                    type="email"
+                    placeholder="E-mail"
+                    value={registerData.email}
+                    onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
+                    className="h-11"
+                    required
+                  />
+
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Senha"
+                      value={registerData.password}
+                      onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
+                      className="h-11 pr-10"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5 text-gray-500" /> : <Eye className="w-5 h-5 text-gray-500" />}
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-2">
+                      <Checkbox
+                        checked={registerData.receiveInfo}
+                        onCheckedChange={(checked) => setRegisterData({ ...registerData, receiveInfo: checked })}
+                        id="receiveInfo"
+                      />
+                      <label htmlFor="receiveInfo" className="text-sm text-gray-700 cursor-pointer">
+                        Receber informações dos nossos parceiros
+                      </label>
+                    </div>
+
+                    <div className="flex items-start gap-2">
+                      <Checkbox
+                        checked={registerData.acceptTerms}
+                        onCheckedChange={(checked) => setRegisterData({ ...registerData, acceptTerms: checked })}
+                        id="acceptTerms"
+                      />
+                      <label htmlFor="acceptTerms" className="text-sm text-gray-700 cursor-pointer">
+                        Eu aceito{' '}
+                        <a href="#" className="text-pink-600 hover:underline">
+                          as condições gerais de venda e utilização
+                        </a>
+                      </label>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-gray-900 hover:bg-gray-800 text-white h-12 rounded-full font-semibold text-base"
+                  >
+                    M'inscrire
+                  </Button>
+
+                  <p className="text-center text-sm text-gray-500">Etapa 2/2</p>
+                </form>
+              )}
+            </div>
+          </Card>
         </div>
-      </footer>
+      )}
+
+      {/* Footer Ratings */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-center">
+          <div>
+            <div className="flex items-center justify-center gap-1 mb-2">
+              {[1,2,3,4].map((i) => (
+                <span key={i} className="text-yellow-500 text-xl">★</span>
+              ))}
+              <span className="text-gray-300 text-xl">★</span>
+              <span className="text-lg font-bold ml-2">4.6/5</span>
+            </div>
+            <p className="text-sm text-gray-600">Calculado a partir de 47.488 avaliações</p>
+          </div>
+          <div>
+            <div className="flex items-center justify-center gap-1 mb-2">
+              {[1,2,3,4].map((i) => (
+                <span key={i} className="text-yellow-500 text-xl">★</span>
+              ))}
+              <span className="text-gray-300 text-xl">★</span>
+              <span className="text-lg font-bold ml-2">4.6/5</span>
+            </div>
+            <p className="text-sm text-gray-600">Calculado a partir de 66.500 avaliações</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
