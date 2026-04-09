@@ -284,8 +284,8 @@ const Mensagens = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center justify-center lg:justify-start">
               <span className="text-base font-bold">
-                <span className="text-green-500">allo</span>
-                <span className="text-pink-500">voisins</span>
+                <span className="text-green-500">Jataí</span>
+                <span className="text-orange-500"> Região Trabalho</span>
               </span>
               <p className="text-[10px] text-gray-500 ml-2">Paris (Chaillot 1)</p>
             </div>

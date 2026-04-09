@@ -13,15 +13,15 @@ const Inicio = () => {
       <header className="border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-pink-400 to-green-400 rounded-lg flex items-center justify-center text-white font-bold">
-              S
+            <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-green-400 rounded-lg flex items-center justify-center text-white font-bold">
+              J
             </div>
             <div className="flex flex-col">
               <span className="text-xl font-bold">
-                <span className="text-pink-500">servi</span>
-                <span className="text-green-500">vizinhos</span>
+                <span className="text-green-500">Jataí</span>
+                <span className="text-orange-500"> Região</span>
               </span>
-              <span className="text-xs text-gray-500 uppercase">Facilitador de Serviços</span>
+              <span className="text-xs text-gray-500 uppercase">Facilitador de Trabalho</span>
             </div>
           </div>
           <div className="flex items-center space-x-4">

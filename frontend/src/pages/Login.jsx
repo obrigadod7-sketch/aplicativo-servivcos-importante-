@@ -253,8 +253,8 @@ const Login = () => {
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-2xl font-bold">
-              <span className="text-green-500">allo</span>
-              <span className="text-pink-500">voisins</span>
+              <span className="text-green-500">Jataí</span>
+              <span className="text-orange-500"> Região Trabalho</span>
             </span>
             <p className="text-xs text-gray-500 hidden sm:block">FACILITADOR DE PROJETOS</p>
           </div>
@@ -282,7 +282,7 @@ const Login = () => {
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Prestações de serviços
             <br />
-            <span className="text-pink-500">e aluguel de material</span>
+            <span className="text-orange-500">e aluguel de material</span>
           </h1>
           <p className="text-lg text-gray-700">
             Mais de 3 milhões de profissionais por toda a França
@@ -331,7 +331,7 @@ const Login = () => {
                   setShowModal(true);
                   setModalStep(1);
                 }}
-                className="text-sm text-pink-600 hover:text-pink-700 font-medium"
+                className="text-sm text-orange-600 hover:text-orange-700 font-medium"
               >
                 Criar uma conta
               </button>
@@ -377,7 +377,7 @@ const Login = () => {
                     <Button
                       onClick={() => handleTypeSelect('particular')}
                       variant="outline"
-                      className="w-full h-12 text-base border-2 border-gray-300 hover:border-pink-500 hover:bg-pink-50 rounded-full"
+                      className="w-full h-12 text-base border-2 border-gray-300 hover:border-orange-500 hover:bg-orange-50 rounded-full"
                     >
                       Particular
                     </Button>
@@ -391,7 +391,7 @@ const Login = () => {
                     <Button
                       onClick={() => handleTypeSelect('auto-entrepreneur')}
                       variant="outline"
-                      className="w-full h-12 text-base border-2 border-gray-300 hover:border-pink-500 hover:bg-pink-50 rounded-full"
+                      className="w-full h-12 text-base border-2 border-gray-300 hover:border-orange-500 hover:bg-orange-50 rounded-full"
                     >
                       Auto-empresário
                     </Button>
@@ -399,7 +399,7 @@ const Login = () => {
                     <Button
                       onClick={() => handleTypeSelect('enterprise')}
                       variant="outline"
-                      className="w-full h-12 text-base border-2 border-gray-300 hover:border-pink-500 hover:bg-pink-50 rounded-full"
+                      className="w-full h-12 text-base border-2 border-gray-300 hover:border-orange-500 hover:bg-orange-50 rounded-full"
                     >
                       Empresa
                     </Button>
@@ -426,7 +426,7 @@ const Login = () => {
                       type="button"
                       onClick={handleGetLocation}
                       disabled={loadingLocation}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-pink-600 hover:text-pink-700"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-orange-600 hover:text-orange-700"
                       title="Detectar localização automaticamente"
                     >
                       {loadingLocation ? (
@@ -493,7 +493,7 @@ const Login = () => {
                       />
                       <label htmlFor="acceptTerms" className="text-sm text-gray-700 cursor-pointer">
                         Eu aceito{' '}
-                        <a href="#" className="text-pink-600 hover:underline">
+                        <a href="#" className="text-orange-600 hover:underline">
                           as condições gerais de venda e utilização
                         </a>
                       </label>

@@ -44,8 +44,8 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="text-lg font-bold">
-                <span className="text-green-500">allo</span>
-                <span className="text-pink-500">voisins</span>
+                <span className="text-green-500">Jataí</span>
+                <span className="text-orange-500"> Região Trabalho</span>
               </span>
               <span className="text-gray-400">|</span>
               <h1 className="text-xl font-bold text-gray-900">Dashboard Admin</h1>
@@ -154,7 +154,7 @@ const Dashboard = () => {
           </Card>
 
           {/* Services Completed */}
-          <Card className="p-6 bg-gradient-to-br from-purple-500 to-pink-500 text-white">
+          <Card className="p-6 bg-gradient-to-br from-purple-500 to-orange-500 text-white">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-medium opacity-90">Serviços Concluídos</h3>
               <Calendar className="w-5 h-5 opacity-90" />

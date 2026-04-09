@@ -189,7 +189,7 @@ const Assinatura = () => {
                           onClick={item.onClick}
                           className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                             item.active 
-                              ? 'bg-pink-50 text-pink-700 font-medium' 
+                              ? 'bg-orange-50 text-orange-700 font-medium' 
                               : 'text-gray-700 hover:bg-gray-100'
                           }`}
                         >
@@ -227,7 +227,7 @@ const Assinatura = () => {
                           step={1}
                           className="flex-1"
                         />
-                        <span className="text-sm font-semibold text-pink-600 w-16 text-right">
+                        <span className="text-sm font-semibold text-orange-600 w-16 text-right">
                           {radius[0]}km
                         </span>
                       </div>
@@ -340,7 +340,7 @@ const Assinatura = () => {
 
               <Button
                 onClick={handleFreeTrial}
-                className="w-full bg-white text-pink-600 hover:bg-gray-100 rounded-full h-11 font-bold mb-3"
+                className="w-full bg-white text-orange-600 hover:bg-gray-100 rounded-full h-11 font-bold mb-3"
               >
                 Eu me inscrevo
               </Button>
