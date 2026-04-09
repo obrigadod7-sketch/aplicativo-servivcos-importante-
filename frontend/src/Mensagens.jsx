@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from './components/ui/avatar';
 import { Input } from './components/ui/input';
 import { Button } from './components/ui/button';
@@ -95,6 +96,7 @@ const mockConversations = [
 ];
 
 const Mensagens = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedConvId, setSelectedConvId] = useState(null);
   const [message, setMessage] = useState('');
   const [filter, setFilter] = useState('todas');
@@ -113,6 +115,61 @@ const Mensagens = () => {
   });
   const messagesEndRef = useRef(null);
   const { toast } = useToast();
+
+  // Check if redirected from Feed with user info
+  useEffect(() => {
+    const userId = searchParams.get('userId');
+    const userName = searchParams.get('userName');
+    const userAvatar = searchParams.get('userAvatar');
+
+    if (userId && userName) {
+      // Check if conversation already exists
+      let existingConv = conversations.find(c => c.userId === userId);
+      
+      if (!existingConv) {
+        // Create new conversation
+        const newConv = {
+          id: `new-${Date.now()}`,
+          userId: userId,
+          name: userName,
+          avatar: userAvatar || '',
+          rating: 5,
+          service: 'Serviço solicitado',
+          lastMessage: 'Nova conversa iniciada',
+          date: new Date().toLocaleDateString('pt-BR'),
+          unread: false,
+          messages: [
+            {
+              id: `m-${Date.now()}`,
+              type: 'text',
+              text: 'Olá! Vi sua solicitação e gostaria de conversar sobre o serviço.',
+              time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+              fromMe: true
+            }
+          ]
+        };
+        
+        setConversations(prev => [newConv, ...prev]);
+        setSelectedConvId(newConv.id);
+        
+        toast({
+          title: 'Conversa iniciada!',
+          description: `Mensagem enviada para ${userName}`,
+        });
+      } else {
+        // Open existing conversation
+        setSelectedConvId(existingConv.id);
+        
+        toast({
+          title: 'Conversa aberta!',
+          description: `Continuando conversa com ${userName}`,
+        });
+      }
+      
+      // Clear URL parameters
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams, conversations, toast]);
 
   const conv = conversations.find(c => c.id === selectedConvId);
 

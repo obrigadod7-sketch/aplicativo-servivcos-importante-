@@ -77,11 +77,11 @@ const PostCard = ({ post }) => {
   const handleRespond = () => {
     toast({
       title: 'Abrindo chat...',
-      description: 'Redirecionando para mensagens'
+      description: `Iniciando conversa com ${post.userName}`
     });
-    // Redirect to messages after short delay
+    // Redirect to messages with user info after short delay
     setTimeout(() => {
-      navigate('/mensagens');
+      navigate(`/mensagens?userId=${post.userId}&userName=${encodeURIComponent(post.userName)}&userAvatar=${encodeURIComponent(post.userAvatar)}`);
     }, 1000);
   };
 
