@@ -56,6 +56,23 @@ const profilesData = {
       'https://images.unsplash.com/photo-1556911220-bff31c812dba?w=400&h=300&fit=crop',
       'https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=400&h=300&fit=crop'
     ]
+  },
+  '4': {
+    name: 'Juliana S.',
+    avatar: 'https://i.pravatar.cc/200?img=45',
+    verified: true,
+    profession: 'Proprietária',
+    location: 'São Paulo (Vila Mariana)',
+    type: 'Particular',
+    rating: 5.0,
+    reviews: 28,
+    joinDate: '10 fevereiro 2024',
+    connections: 89,
+    description: 'Sempre procurando profissionais de confiança para manutenção e reparos em minha residência.',
+    photos: [
+      'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1556912173-46c336c7fd55?w=400&h=300&fit=crop'
+    ]
   }
 };
 

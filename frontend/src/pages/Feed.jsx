@@ -11,7 +11,7 @@ import { useToast } from '../hooks/use-toast';
 const mockPosts = [
   {
     id: '1',
-    userId: '1', // ID do usuário para redirecionar ao perfil correto
+    userId: '4', // ID do usuário para redirecionar ao perfil correto de Juliana S.
     userName: 'Juliana S.',
     userAvatar: 'https://i.pravatar.cc/150?img=45',
     time: 'postado às 17:28',
@@ -24,7 +24,7 @@ const mockPosts = [
   },
   {
     id: '2',
-    userId: '1', // ID do usuário para redirecionar ao perfil correto
+    userId: '4', // ID do usuário para redirecionar ao perfil correto de Juliana S.
     userName: 'Juliana S.',
     userAvatar: 'https://i.pravatar.cc/150?img=45',
     time: 'postado às 17:24',
