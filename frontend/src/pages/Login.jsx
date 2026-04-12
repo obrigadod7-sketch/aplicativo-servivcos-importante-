@@ -212,16 +212,36 @@ const Login = () => {
       return;
     }
 
-    localStorage.setItem('user', JSON.stringify({ 
+    // Generate user name
+    const userName = accountType === 'particular' 
+      ? `${registerData.firstName} ${registerData.lastName}` 
+      : registerData.businessName;
+
+    // Generate avatar - usando primeira letra do nome
+    const firstLetter = userName.charAt(0).toUpperCase();
+    const randomId = Math.floor(Math.random() * 70) + 1; // 1-70 para pravatar
+    const avatarUrl = `https://i.pravatar.cc/150?img=${randomId}`;
+
+    // Save complete user data (sem password por segurança)
+    const userData = {
       email: registerData.email,
-      name: registerData.firstName ? `${registerData.firstName} ${registerData.lastName}` : registerData.businessName,
+      name: userName,
+      firstName: registerData.firstName || '',
+      lastName: registerData.lastName || '',
+      businessName: registerData.businessName || '',
+      profession: registerData.profession || '',
       accountType: accountType,
-      ...registerData
-    }));
+      avatar: avatarUrl,
+      postalAddress: registerData.postalAddress,
+      mobile: registerData.mobile,
+      createdAt: new Date().toISOString()
+    };
+
+    localStorage.setItem('user', JSON.stringify(userData));
     
     toast({
-      title: 'Cadastro realizado!',
-      description: 'Bem-vindo ao Jataí Região Trabalho',
+      title: 'Cadastro realizado! ✅',
+      description: `Bem-vindo(a), ${userName}!`,
       duration: 3000
     });
     

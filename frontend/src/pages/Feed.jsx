@@ -206,9 +206,20 @@ const Feed = () => {
 
   // Check if user is admin and load posts
   const [isAdmin, setIsAdmin] = useState(false);
+  const [currentUser, setCurrentUser] = useState({ name: 'Usuário', avatar: 'https://i.pravatar.cc/150?img=33' });
+  
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     setIsAdmin(user.email === 'francesdefranceff@gmail.com');
+    
+    // Set current user data
+    if (user.name) {
+      setCurrentUser({
+        name: user.name,
+        avatar: user.avatar || 'https://i.pravatar.cc/150?img=33',
+        email: user.email
+      });
+    }
     
     // Load saved posts from localStorage and combine with mock posts
     const userPosts = JSON.parse(localStorage.getItem('userPosts') || '[]');
@@ -259,15 +270,20 @@ const Feed = () => {
       return;
     }
 
+    // Get current user data
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const userName = currentUser.name || 'Você';
+    const userAvatar = currentUser.avatar || 'https://i.pravatar.cc/150?img=33';
+
     // Convert selected photos to base64 or keep URLs
     const photoUrls = selectedPhotos.map(photo => photo.preview);
 
-    // Create new mock post
+    // Create new post with user data
     const newPost = {
       id: `new-${Date.now()}`,
-      userId: '1', // ID do usuário
-      userName: 'Você',
-      userAvatar: 'https://i.pravatar.cc/150?img=33',
+      userId: currentUser.email || '1',
+      userName: userName,
+      userAvatar: userAvatar,
       time: 'postado agora',
       description: postDescription,
       location: postAddress,
@@ -364,8 +380,8 @@ const Feed = () => {
             {/* Mobile: Avatar */}
             <div className="lg:hidden relative cursor-pointer" onClick={() => navigate('/perfil')}>
               <Avatar className="w-8 h-8">
-                <AvatarImage src="https://i.pravatar.cc/150?img=68" />
-                <AvatarFallback>U</AvatarFallback>
+                <AvatarImage src={currentUser.avatar} />
+                <AvatarFallback>{currentUser.name?.charAt(0) || 'U'}</AvatarFallback>
               </Avatar>
               <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-white text-[10px] font-semibold">1</div>
             </div>
