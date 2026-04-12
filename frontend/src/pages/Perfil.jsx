@@ -82,8 +82,29 @@ const Perfil = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('presentation');
-  const profileId = searchParams.get('id') || '1';
-  const profile = profilesData[profileId] || profilesData['1'];
+  const profileId = searchParams.get('id');
+  
+  // Get current logged user
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  
+  // If no ID or ID matches current user, show their profile
+  const isOwnProfile = !profileId || profileId === currentUser.email;
+  
+  // Use current user data or mock data
+  const profile = isOwnProfile ? {
+    name: currentUser.name || 'Usuário',
+    avatar: currentUser.avatar || 'https://i.pravatar.cc/200?img=33',
+    verified: false,
+    profession: currentUser.profession || currentUser.accountType || 'Membro',
+    location: currentUser.postalAddress || 'Localização não definida',
+    type: currentUser.accountType || 'Particular',
+    rating: 5.0,
+    reviews: 0,
+    joinDate: currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR'),
+    connections: 0,
+    description: `Membro desde ${currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleDateString('pt-BR') : 'hoje'}`,
+    photos: []
+  } : (profilesData[profileId] || profilesData['1']);
 
   const handleLogout = () => {
     // Limpar todos os dados do localStorage
