@@ -270,8 +270,22 @@ const Feed = () => {
       return;
     }
 
-    // Get current user data
+    // Get current user data - SEMPRE do localStorage
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    // Verificar se tem avatar, se não criar um fixo baseado no email
+    if (!currentUser.avatar && currentUser.email) {
+      // Criar avatar fixo baseado no hash do email
+      const emailHash = currentUser.email.split('').reduce((a, b) => {
+        a = ((a << 5) - a) + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      const avatarId = Math.abs(emailHash % 70) + 1;
+      currentUser.avatar = `https://i.pravatar.cc/150?img=${avatarId}`;
+      // Salvar avatar no localStorage
+      localStorage.setItem('user', JSON.stringify(currentUser));
+    }
+    
     const userName = currentUser.name || 'Você';
     const userAvatar = currentUser.avatar || 'https://i.pravatar.cc/150?img=33';
 
