@@ -446,7 +446,7 @@ export default function FeedPage() {
                         {photo ? (
                           <>
                             <img
-                              src={photo.preview}
+                              src={photo.dataUrl}
                               alt="Preview"
                               className="w-full h-full object-cover rounded-lg border-2 border-gray-300"
                             />
