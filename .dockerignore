@@ -1,0 +1,23 @@
+# Files NOT to copy into Docker image
+node_modules
+.git
+.github
+.emergent
+.venv
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+test_reports
+tests
+*.md
+.env
+.env.*
+*.env
+frontend/build
+frontend/node_modules
+backend/.env
+__MACOSX
+*.DS_Store
+.idea
+.vscode

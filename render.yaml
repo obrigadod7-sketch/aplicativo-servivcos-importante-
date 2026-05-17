@@ -1,18 +1,15 @@
 services:
-  # ===== Backend (FastAPI) =====
+  # Single Docker service: builds frontend + runs backend + serves both
   - type: web
-    name: jatai-backend
-    runtime: python
-    rootDir: backend
+    name: jatai-app
+    runtime: docker
     plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /api
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.10
       - key: MONGO_URL
-        sync: false              # configure no painel do Render (MongoDB Atlas)
+        sync: false                    # set in Render dashboard (MongoDB Atlas)
       - key: DB_NAME
         value: watizat_db
       - key: JWT_SECRET
@@ -20,7 +17,7 @@ services:
       - key: CORS_ORIGINS
         value: "*"
       - key: PIX_KEY
-        sync: false              # configure no painel: sua chave PIX real
+        sync: false                    # set in Render dashboard (your real PIX key)
       - key: PIX_MERCHANT_NAME
         value: JATAI REGIAO TRABALHO
       - key: PIX_MERCHANT_CITY
@@ -29,28 +26,3 @@ services:
         value: "35.90"
       - key: SUB_TRIAL_DAYS
         value: "3"
-
-  # ===== Frontend (React build estático) =====
-  - type: web
-    name: jatai-frontend
-    runtime: static
-    rootDir: frontend
-    plan: free
-    buildCommand: yarn install && yarn build
-    staticPublishPath: ./build
-    envVars:
-      - key: NODE_VERSION
-        value: 20.11.0
-      - key: GENERATE_SOURCEMAP
-        value: "false"
-      - key: CI
-        value: "false"
-      - key: REACT_APP_BACKEND_URL
-        fromService:
-          type: web
-          name: jatai-backend
-          property: host          # https://jatai-backend.onrender.com
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html

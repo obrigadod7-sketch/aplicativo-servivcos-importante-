@@ -25,8 +25,13 @@ import random
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
+# Robust env handling for production deploys (Render/Railway/etc).
+# Falls back to a safe local default; logs warning if missing.
+mongo_url = os.environ.get('MONGO_URL') or 'mongodb://localhost:27017'
+if not os.environ.get('MONGO_URL'):
+    logging.basicConfig(level=logging.WARNING)
+    logging.warning("MONGO_URL not set! Falling back to mongodb://localhost:27017 - configure it in your deploy environment.")
+client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=5000)
 
 # Extrai o nome do banco de dados da URL ou usa DB_NAME
 def get_database_name():
