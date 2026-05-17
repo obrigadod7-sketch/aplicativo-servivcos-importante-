@@ -1,0 +1,56 @@
+services:
+  # ===== Backend (FastAPI) =====
+  - type: web
+    name: jatai-backend
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.10
+      - key: MONGO_URL
+        sync: false              # configure no painel do Render (MongoDB Atlas)
+      - key: DB_NAME
+        value: watizat_db
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: PIX_KEY
+        sync: false              # configure no painel: sua chave PIX real
+      - key: PIX_MERCHANT_NAME
+        value: JATAI REGIAO TRABALHO
+      - key: PIX_MERCHANT_CITY
+        value: SAO PAULO
+      - key: SUB_AMOUNT
+        value: "35.90"
+      - key: SUB_TRIAL_DAYS
+        value: "3"
+
+  # ===== Frontend (React build estático) =====
+  - type: web
+    name: jatai-frontend
+    runtime: static
+    rootDir: frontend
+    plan: free
+    buildCommand: yarn install && yarn build
+    staticPublishPath: ./build
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.0
+      - key: GENERATE_SOURCEMAP
+        value: "false"
+      - key: CI
+        value: "false"
+      - key: REACT_APP_BACKEND_URL
+        fromService:
+          type: web
+          name: jatai-backend
+          property: host          # https://jatai-backend.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
