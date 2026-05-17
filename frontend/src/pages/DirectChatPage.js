@@ -230,9 +230,46 @@ export default function DirectChatPage() {
   const avatarUrl = (u) => u?.avatar || `https://i.pravatar.cc/200?u=${u?.id || u?.email || 'user'}`;
 
   return (
-    <div className="min-h-screen bg-[#f4f5f7]" data-testid="direct-chat-page">
-      {/* ===== TOP NAVBAR ===== */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
+    <div className="min-h-screen bg-[#f4f5f7] pb-20 md:pb-0" data-testid="direct-chat-page">
+      {/* ===== MOBILE TOP CHAT HEADER (only mobile) ===== */}
+      <header className="md:hidden bg-white border-b border-gray-200 sticky top-0 z-30 px-3 py-2.5 flex items-center gap-3">
+        <button
+          data-testid="mobile-back-btn"
+          onClick={() => navigate('/chat')}
+          className="p-1 text-blue-500"
+          aria-label="Voltar"
+        >
+          <ArrowLeft size={24} />
+        </button>
+        {otherUser ? (
+          <>
+            <img
+              src={avatarUrl(otherUser)}
+              alt={otherUser.name}
+              className="w-11 h-11 rounded-full object-cover bg-gray-200"
+            />
+            <div className="flex-1 min-w-0">
+              <h1 className="font-bold text-gray-900 truncate leading-tight" data-testid="mobile-other-name">
+                {otherUser.name}
+              </h1>
+              <p className="text-xs text-gray-500 truncate leading-tight">Serviço solicitado</p>
+            </div>
+            <button
+              data-testid="mobile-menu-btn"
+              onClick={() => toast.info('Mais opções em breve')}
+              className="p-2 text-gray-600"
+              aria-label="Menu"
+            >
+              <MoreVertical size={20} />
+            </button>
+          </>
+        ) : (
+          <div className="flex-1 text-sm text-gray-400">Carregando...</div>
+        )}
+      </header>
+
+      {/* ===== TOP NAVBAR (desktop only) ===== */}
+      <header className="hidden md:block bg-white border-b border-gray-200 sticky top-0 z-30">
         <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -276,11 +313,11 @@ export default function DirectChatPage() {
         </div>
       </header>
 
-      {/* ===== 3-COLUMN LAYOUT ===== */}
+      {/* ===== 3-COLUMN LAYOUT (desktop) / chat fullscreen (mobile) ===== */}
       <div className="max-w-[1400px] mx-auto grid grid-cols-12 gap-0 px-0 md:px-6 py-0 md:py-6">
 
-        {/* ============ LEFT: CONVERSATIONS LIST ============ */}
-        <aside className="col-span-12 md:col-span-3 bg-white md:rounded-2xl md:shadow-sm border border-gray-200 overflow-hidden">
+        {/* ============ LEFT: CONVERSATIONS LIST (desktop only) ============ */}
+        <aside className="hidden md:block md:col-span-3 bg-white md:rounded-2xl md:shadow-sm border border-gray-200 overflow-hidden">
           <div className="px-5 py-4 flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-900">Mensagens</h2>
             <button data-testid="edit-conversations" className="text-sm text-gray-500 hover:text-gray-800">Editar</button>
@@ -369,11 +406,11 @@ export default function DirectChatPage() {
         </aside>
 
         {/* ============ CENTER: CHAT ============ */}
-        <main className="col-span-12 md:col-span-6 bg-white md:mx-0 md:rounded-2xl md:shadow-sm border-y md:border border-gray-200 flex flex-col" style={{ minHeight: 'calc(100vh - 112px)' }}>
+        <main className="col-span-12 md:col-span-6 bg-white md:mx-0 md:rounded-2xl md:shadow-sm border-0 md:border md:border-gray-200 flex flex-col" style={{ minHeight: 'calc(100vh - 112px)' }}>
 
-          {/* Banner: Solicitação privada */}
+          {/* Banner: Solicitação privada (desktop only) */}
           {currentPost && (
-            <div className="px-6 pt-5 pb-3 border-b border-gray-100">
+            <div className="hidden md:block px-6 pt-5 pb-3 border-b border-gray-100">
               <div className="bg-sky-50/70 rounded-xl px-4 py-3 flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 text-[#16a34a] font-semibold text-sm">
@@ -509,9 +546,9 @@ export default function DirectChatPage() {
             )}
           </div>
 
-          {/* Action buttons (Recusar / Agendar / Pagamento / Avaliar) */}
+          {/* Action buttons (Recusar / Agendar / Pagamento / Avaliar) - desktop only */}
           {canChat && (
-            <div className="border-t border-gray-100 px-6 py-3">
+            <div className="hidden md:block border-t border-gray-100 px-6 py-3">
               <div className="flex items-center gap-2 flex-wrap">
                 <ActionBtn icon={<XIcon size={16} />} label="Recusar" onClick={() => toast.info('Solicitação recusada')} testid="action-refuse" />
                 <ActionBtn icon={<Calendar size={16} />} label="Agendar" onClick={() => toast.info('Abrir agenda...')} testid="action-schedule" />
@@ -584,8 +621,8 @@ export default function DirectChatPage() {
           )}
         </main>
 
-        {/* ============ RIGHT: PROFILE PANEL ============ */}
-        <aside className="col-span-12 md:col-span-3 md:pl-6">
+        {/* ============ RIGHT: PROFILE PANEL (desktop only) ============ */}
+        <aside className="hidden md:block md:col-span-3 md:pl-6">
           <div className="bg-white md:rounded-2xl md:shadow-sm border border-gray-200 p-6">
             {otherUser ? (
               <>
@@ -650,9 +687,37 @@ export default function DirectChatPage() {
           </div>
         </aside>
       </div>
+
+      {/* ===== MOBILE BOTTOM NAV (only mobile) ===== */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 px-2 py-2 flex items-end justify-around" data-testid="mobile-bottom-nav">
+        <MobileNavItem icon={<HomeIcon size={22} />} label="Início" onClick={() => navigate('/home')} testid="mob-nav-home" />
+        <MobileNavItem icon={<UsersIcon size={22} />} label="Ofertantes" onClick={() => navigate('/volunteers')} testid="mob-nav-offer" />
+        <button
+          onClick={() => navigate('/home')}
+          data-testid="mob-nav-demande"
+          className="flex flex-col items-center -mt-5"
+        >
+          <div className="w-12 h-12 rounded-full bg-[#16a34a] text-white grid place-items-center shadow-md shadow-green-500/40">
+            <Plus size={26} />
+          </div>
+          <span className="text-[11px] text-gray-500 mt-0.5">Demande</span>
+        </button>
+        <MobileNavItem icon={<MessageSquare size={22} />} label="Mensagens" active onClick={() => navigate('/chat')} testid="mob-nav-msg" />
+      </nav>
     </div>
   );
 }
+
+const MobileNavItem = ({ icon, label, onClick, active, testid }) => (
+  <button
+    onClick={onClick}
+    data-testid={testid}
+    className={`flex flex-col items-center gap-0.5 px-2 py-1 min-w-[60px] ${active ? 'text-gray-900' : 'text-gray-500'}`}
+  >
+    {icon}
+    <span className="text-[11px] font-medium">{label}</span>
+  </button>
+);
 
 // ===== Helper components =====
 const NavBtn = ({ icon, label, active, onClick }) => (
