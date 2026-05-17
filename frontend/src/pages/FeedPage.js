@@ -6,7 +6,7 @@ import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { Heart, Share2, MessageSquare, MapPin, Globe, Camera, X, Home as HomeIcon, Users, Plus, BarChart3, MessageCircle, Settings, Film, Wrench } from 'lucide-react';
+import { Heart, Share2, MessageSquare, MapPin, Globe, Camera, X, Home as HomeIcon, Users, Plus, BarChart3, MessageCircle, Settings, Film, Wrench, Bell, Menu } from 'lucide-react';
 import { Dialog, DialogContent } from '../components/ui/dialog';
 import { toast } from 'sonner';
 
@@ -303,16 +303,36 @@ export default function FeedPage() {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-20">
         <div className="max-w-[1200px] mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
-            {/* Mobile: Avatar */}
-            <button className="lg:hidden relative" onClick={() => navigate('/profile')} data-testid="mobile-avatar">
-              <Avatar className="w-8 h-8">
-                <AvatarImage src={userAvatar} />
-                <AvatarFallback>{userInitial}</AvatarFallback>
-              </Avatar>
-            </button>
+            {/* Mobile: Jataí Região logo (left) */}
+            <div className="flex items-center gap-2 lg:hidden">
+              <div className="w-9 h-9 rounded-xl grid place-items-center text-white font-extrabold text-lg" style={{ background: 'linear-gradient(135deg,#22c55e 0%,#f97316 100%)' }}>
+                J
+              </div>
+              <span className="text-base font-extrabold leading-tight">
+                <span className="text-green-500">Jataí</span>{' '}
+                <span className="text-orange-500">Região</span>
+              </span>
+            </div>
 
-            {/* Center: Logo */}
-            <div className="flex items-center justify-center lg:justify-start">
+            {/* Mobile right cluster: bell + avatar + menu */}
+            <div className="flex items-center gap-3 lg:hidden">
+              <button className="relative" data-testid="notifications-btn" onClick={() => toast.info('Notificações em breve')}>
+                <Bell className="w-6 h-6 text-gray-800" />
+                <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+              </button>
+              <button onClick={() => navigate('/profile')} data-testid="mobile-avatar" className="rounded-full ring-2 ring-green-400">
+                <Avatar className="w-8 h-8">
+                  <AvatarImage src={userAvatar} />
+                  <AvatarFallback>{userInitial}</AvatarFallback>
+                </Avatar>
+              </button>
+              <button data-testid="mobile-menu" onClick={() => navigate('/profile')} className="text-gray-700">
+                <Menu className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Desktop: Logo (Watizat unchanged) */}
+            <div className="hidden lg:flex items-center justify-center lg:justify-start">
               <span className="text-base font-bold">
                 <span className="text-green-500">Wati</span>
                 <span className="text-orange-500">zat</span>
@@ -375,34 +395,76 @@ export default function FeedPage() {
               </div>
             </button>
 
-            <div className="lg:hidden w-8" />
+            <div className="hidden lg:block w-8" />
           </div>
+        </div>
+
+        {/* Mobile-only: Location pill */}
+        <div className="lg:hidden px-4 pb-2">
+          <button
+            onClick={() => navigate('/profile')}
+            data-testid="location-pill"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition"
+          >
+            <MapPin className="w-3.5 h-3.5 text-gray-500" />
+            <span className="text-xs text-gray-700">
+              {user?.location?.address || user?.location?.city || 'Jataí, Goiás'}
+            </span>
+          </button>
         </div>
       </header>
 
-      {/* Premium Banner (Salmon) */}
+      {/* Premium Banner (mobile = "Torne-se Premier!", desktop = "Apoio Solidário") */}
       {showBanner && (
-        <div className="bg-gradient-to-r from-[#FFB6A3] to-[#FFA08A] px-4 py-3 relative">
-          <button
-            onClick={() => setShowBanner(false)}
-            className="absolute top-1 right-2 text-gray-700 hover:text-gray-900"
-            data-testid="close-banner"
-          >
-            <X className="w-4 h-4" />
-          </button>
-          <p className="text-xs text-gray-800 text-center font-medium mb-2 pr-6">
-            Encontre apoio solidário ou ofereça seus serviços para a comunidade migrante!
-          </p>
-          <div className="flex justify-center">
-            <Button
-              onClick={() => navigate('/housing')}
-              className="bg-white hover:bg-gray-50 text-gray-800 font-semibold rounded-full px-6 h-9 shadow-sm text-sm"
-              data-testid="banner-cta"
+        <>
+          {/* Mobile Premium banner (matches IMG_7748) */}
+          <div className="lg:hidden bg-rose-50 px-5 py-4 relative">
+            <button
+              onClick={() => setShowBanner(false)}
+              className="absolute top-2 right-3 text-gray-500 hover:text-gray-900"
+              data-testid="close-banner-mobile"
             >
-              Explorar Hospedagem
-            </Button>
+              <X className="w-4 h-4" />
+            </button>
+            <p className="text-[13px] text-rose-400 italic text-center font-medium leading-tight pr-6">
+              Acesse novamente ferramentas e serviços exclusivos:
+              <br />
+              <span className="font-bold not-italic">torne-se Premier!</span>
+            </p>
+            <div className="flex justify-center mt-3">
+              <button
+                onClick={() => navigate('/assinatura')}
+                data-testid="premium-cta-mobile"
+                className="bg-[#ff8d83] hover:bg-[#ff7268] text-white font-semibold rounded-full px-8 h-10 shadow-sm text-sm"
+              >
+                Assinar novamente
+              </button>
+            </div>
           </div>
-        </div>
+
+          {/* Desktop banner (unchanged) */}
+          <div className="hidden lg:block bg-gradient-to-r from-[#FFB6A3] to-[#FFA08A] px-4 py-3 relative">
+            <button
+              onClick={() => setShowBanner(false)}
+              className="absolute top-1 right-2 text-gray-700 hover:text-gray-900"
+              data-testid="close-banner"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <p className="text-xs text-gray-800 text-center font-medium mb-2 pr-6">
+              Encontre apoio solidário ou ofereça seus serviços para a comunidade migrante!
+            </p>
+            <div className="flex justify-center">
+              <Button
+                onClick={() => navigate('/housing')}
+                className="bg-white hover:bg-gray-50 text-gray-800 font-semibold rounded-full px-6 h-9 shadow-sm text-sm"
+                data-testid="banner-cta"
+              >
+                Explorar Hospedagem
+              </Button>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Main Content */}
@@ -530,43 +592,49 @@ export default function FeedPage() {
         </div>
       </div>
 
-      {/* Mobile Bottom Navigation - Jataí Style */}
+      {/* Mobile Bottom Navigation - Jataí Região Style (matches IMG_7748) */}
       <div
-        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-2 flex items-center justify-around z-50 lg:hidden"
+        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 pt-2 pb-2 flex items-end justify-around z-50 lg:hidden"
         data-testid="bottom-navigation"
+        style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}
       >
-        <button onClick={() => navigate('/home')} className="flex flex-col items-center gap-1 p-2 min-w-[60px]" data-testid="nav-home">
-          <HomeIcon className="w-6 h-6 text-gray-900" strokeWidth={2.5} />
-          <span className="text-[10px] text-gray-900 font-semibold">Início</span>
+        <button onClick={() => navigate('/home')} className="flex flex-col items-center gap-0.5 p-1 min-w-[56px]" data-testid="nav-home">
+          <HomeIcon className="w-6 h-6 text-[#8b5cf6]" strokeWidth={2} />
+          <span className="text-[11px] text-[#8b5cf6] font-semibold">Accueil</span>
         </button>
-        <button onClick={() => navigate('/volunteers')} className="flex flex-col items-center gap-1 p-2 min-w-[60px]" data-testid="nav-volunteers">
-          <Users className="w-6 h-6 text-gray-400" />
-          <span className="text-[10px] text-gray-500">Voluntários</span>
+
+        <button onClick={() => navigate('/volunteers')} className="flex flex-col items-center gap-0.5 p-1 min-w-[56px] relative" data-testid="nav-volunteers">
+          <div className="relative">
+            <Users className="w-6 h-6 text-gray-500" />
+            <span className="absolute -top-2 -right-3 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none">999+</span>
+          </div>
+          <span className="text-[11px] text-gray-600">Ofertantes</span>
         </button>
+
         <button
           onClick={() => openModal('need')}
-          className="flex flex-col items-center gap-1 p-2 min-w-[60px] relative"
+          className="flex flex-col items-center gap-0.5 p-1 min-w-[56px] relative"
           data-testid="nav-publish-center"
         >
-          <div className="w-12 h-12 -mt-6 bg-green-500 rounded-full flex items-center justify-center shadow-lg hover:bg-green-600 transition-colors">
-            <Plus className="w-7 h-7 text-white" strokeWidth={2.5} />
+          <div className="w-14 h-14 -mt-7 bg-[#8b5cf6] rounded-full flex items-center justify-center shadow-lg shadow-violet-500/40 hover:bg-[#7c3aed] transition-colors">
+            <Plus className="w-8 h-8 text-white" strokeWidth={2.5} />
           </div>
-          <span className="text-[10px] text-green-600 font-semibold mt-1">Publicar</span>
         </button>
-        {user?.role === 'admin' ? (
-          <button onClick={() => navigate('/admin')} className="flex flex-col items-center gap-1 p-2 min-w-[60px]" data-testid="nav-admin">
-            <Settings className="w-6 h-6 text-gray-400" />
-            <span className="text-[10px] text-gray-500">Admin</span>
-          </button>
-        ) : (
-          <button onClick={() => navigate('/housing')} className="flex flex-col items-center gap-1 p-2 min-w-[60px]" data-testid="nav-housing">
-            <BarChart3 className="w-6 h-6 text-gray-400" />
-            <span className="text-[10px] text-gray-500">Moradia</span>
-          </button>
-        )}
-        <button onClick={() => navigate('/chat')} className="flex flex-col items-center gap-1 p-2 min-w-[60px]" data-testid="nav-chat">
-          <MessageCircle className="w-6 h-6 text-gray-400" />
-          <span className="text-[10px] text-gray-500">Mensagens</span>
+
+        <button onClick={() => navigate('/assinatura')} className="flex flex-col items-center gap-0.5 p-1 min-w-[56px] relative" data-testid="nav-abonnement">
+          <div className="relative">
+            <BarChart3 className="w-6 h-6 text-gray-500" />
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-bold w-4 h-4 grid place-items-center rounded-full leading-none">1</span>
+          </div>
+          <span className="text-[11px] text-gray-600">Assinatura</span>
+        </button>
+
+        <button onClick={() => navigate('/chat')} className="flex flex-col items-center gap-0.5 p-1 min-w-[56px] relative" data-testid="nav-chat">
+          <div className="relative">
+            <MessageCircle className="w-6 h-6 text-gray-500" />
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-bold w-4 h-4 grid place-items-center rounded-full leading-none">2</span>
+          </div>
+          <span className="text-[11px] text-gray-600">Mensagens</span>
         </button>
       </div>
 
@@ -654,6 +722,39 @@ export default function FeedPage() {
                   );
                 })}
               </div>
+            </div>
+
+            <div className="mb-4">
+              <h4 className="text-sm font-semibold text-gray-900 mb-1">Adicione um vídeo</h4>
+              <p className="text-[11px] text-gray-500 mb-3">
+                Opcional (até 20MB). Aumenta a chance de resposta.
+              </p>
+              {selectedVideos.length > 0 ? (
+                <div className="relative">
+                  <video
+                    src={selectedVideos[0].dataUrl}
+                    controls
+                    className="w-full max-h-48 rounded-xl border border-gray-300 bg-black"
+                    data-testid="modal-video-preview"
+                  />
+                  <button
+                    onClick={() => removeVideo(selectedVideos[0].id)}
+                    className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 text-white rounded-full grid place-items-center shadow"
+                    data-testid="modal-remove-video"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <label
+                  className="w-full h-24 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition"
+                  data-testid="modal-video-slot"
+                >
+                  <Film className="w-6 h-6 text-gray-400" />
+                  <span className="text-[11px] text-gray-500 mt-1">Adicionar vídeo</span>
+                  <input type="file" accept="video/*" onChange={handleVideoSelect} className="hidden" />
+                </label>
+              )}
             </div>
 
             <div className="mb-4">
