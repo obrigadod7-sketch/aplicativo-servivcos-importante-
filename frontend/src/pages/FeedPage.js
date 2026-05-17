@@ -1,0 +1,573 @@
+import React, { useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { AuthContext } from '../App';
+import { Card } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
+import { Heart, Share2, MessageSquare, MapPin, Globe, Camera, X, Home as HomeIcon, Users, Plus, BarChart3, MessageCircle, Settings, Film, Wrench } from 'lucide-react';
+import { Dialog, DialogContent } from '../components/ui/dialog';
+import { toast } from 'sonner';
+
+const CATEGORY_OPTIONS = [
+  { value: 'food', label: 'Alimentação' },
+  { value: 'legal', label: 'Jurídico' },
+  { value: 'health', label: 'Saúde' },
+  { value: 'housing', label: 'Moradia' },
+  { value: 'work', label: 'Trabalho' },
+  { value: 'education', label: 'Educação' },
+  { value: 'social', label: 'Social' },
+  { value: 'clothes', label: 'Roupas' },
+  { value: 'furniture', label: 'Móveis' },
+  { value: 'transport', label: 'Transporte' },
+  { value: 'repairs', label: 'Reparos' },
+];
+
+// Jataí-style PostCard rendering Watizat posts
+const PostCard = ({ post, onChat }) => {
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(post.likes_count || 0);
+  const navigate = useNavigate();
+
+  const handleRespond = () => {
+    if (onChat && post.user_id) {
+      navigate(`/direct-chat/${post.user_id}`);
+    } else {
+      toast.info('Abrindo conversa...');
+    }
+  };
+
+  const displayName = post.user?.name || 'Usuário';
+  const avatarFallback = displayName.charAt(0).toUpperCase();
+  const avatarUrl = post.user?.avatar || `https://i.pravatar.cc/150?u=${post.user_id || displayName}`;
+  const description = post.description || post.title || '';
+  const time = post.created_at ? new Date(post.created_at).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'agora';
+  const images = Array.isArray(post.images) ? post.images.filter(Boolean) : [];
+  const videos = Array.isArray(post.videos) ? post.videos.filter(Boolean) : [];
+  const budget = post.budget;
+  const location = post.location?.address || post.location?.city || 'Paris';
+
+  return (
+    <Card className="p-0 mb-3 hover:shadow-md transition-shadow border border-gray-200" data-testid="post-card">
+      <div className="flex items-center justify-between px-3 pt-2 pb-1.5">
+        <div className="flex items-center gap-1.5 text-[10px] text-gray-700">
+          <Globe className="w-3 h-3" />
+          <span className="font-medium">Demanda pública</span>
+        </div>
+        <span className="text-[10px] text-gray-500">postado às {time}</span>
+      </div>
+
+      <div className="px-3 pb-3">
+        <div className="flex items-start space-x-2.5 mb-2">
+          <Avatar className="w-9 h-9">
+            <AvatarImage src={avatarUrl} />
+            <AvatarFallback>{avatarFallback}</AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-sm mb-1.5">{displayName}</h3>
+            {post.title && <p className="text-xs font-medium text-gray-900 mb-1">{post.title}</p>}
+            <p className="text-xs text-gray-800 leading-relaxed">{description}</p>
+
+            {images.length > 0 && (
+              <div className={`mt-2 mb-2 ${images.length === 1 ? '' : 'grid grid-cols-2 gap-2'}`}>
+                {images.map((img, idx) => (
+                  <div
+                    key={idx}
+                    data-testid={`post-card-img-${idx}`}
+                    className={`relative overflow-hidden rounded-md border border-gray-200 bg-gray-50 ${images.length === 1 ? 'max-h-[500px]' : 'aspect-square'}`}
+                  >
+                    <img
+                      src={img}
+                      alt={`Mídia ${idx + 1}`}
+                      className={`w-full h-full ${images.length === 1 ? 'object-contain' : 'object-cover'}`}
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {videos.length > 0 && (
+              <div className="mt-2 mb-2 space-y-2">
+                {videos.map((vid, idx) => (
+                  <video
+                    key={idx}
+                    data-testid={`post-card-video-${idx}`}
+                    src={vid}
+                    controls
+                    className="w-full max-h-[400px] rounded-md border border-gray-200 bg-black"
+                  />
+                ))}
+              </div>
+            )}
+
+            <div className="flex items-center gap-1.5 mt-2 text-[10px] text-gray-600">
+              <MapPin className="w-3 h-3" />
+              <span>{location}</span>
+            </div>
+            {budget && (
+              <p className="text-[10px] text-gray-700 mt-0.5">
+                Orçamento: <span className="font-semibold">{budget}</span>
+              </p>
+            )}
+            <p className="text-[10px] text-gray-600 mt-0.5">
+              Categoria: <span className="font-medium capitalize">{post.category || 'geral'}</span>
+            </p>
+          </div>
+        </div>
+
+        <div className="text-right text-[10px] text-gray-500 mb-1.5">{likeCount} curtidas</div>
+        <div className="text-right text-[10px] text-gray-500 mb-2">{post.comments_count || 0} respostas</div>
+
+        <div className="flex items-center justify-start gap-3 pt-2 border-t border-gray-100">
+          <button
+            onClick={() => { setLiked(!liked); setLikeCount(p => liked ? p - 1 : p + 1); }}
+            className={`flex items-center gap-1.5 text-xs transition-colors ${liked ? 'text-red-500' : 'text-gray-600 hover:text-red-500'}`}
+            data-testid="post-like-btn"
+          >
+            <Heart className={`w-4 h-4 ${liked ? 'fill-red-500' : ''}`} />
+            <span>Curtir</span>
+          </button>
+          <button
+            onClick={() => toast.success('Recomendado!')}
+            className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <Share2 className="w-4 h-4" />
+            <span>Recomendar</span>
+          </button>
+          <button
+            onClick={handleRespond}
+            className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-green-600 transition-colors"
+            data-testid="post-respond-btn"
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span>Responder</span>
+          </button>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+export default function FeedPage() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { user, token } = useContext(AuthContext);
+
+  const [posts, setPosts] = useState([]);
+  const [showBanner, setShowBanner] = useState(true);
+  const [loadingPost, setLoadingPost] = useState(false);
+
+  // Modal state
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [modalMode, setModalMode] = useState('need'); // 'need' (Demanda pública) | 'offer' (Serviço voluntário)
+
+  // Form fields
+  const [postDescription, setPostDescription] = useState('');
+  const [postAddress, setPostAddress] = useState('Paris, France');
+  const [postBudget, setPostBudget] = useState('Sob orçamento');
+  const [postCategory, setPostCategory] = useState('social');
+  const [selectedPhotos, setSelectedPhotos] = useState([]); // [{id, dataUrl}]
+  const [selectedVideos, setSelectedVideos] = useState([]); // [{id, dataUrl}]
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const fetchPosts = async () => {
+    try {
+      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/posts`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPosts(Array.isArray(data) ? data : []);
+      }
+    } catch (e) {
+      console.error('Failed to fetch posts', e);
+    }
+  };
+
+  const openModal = (mode) => {
+    setModalMode(mode);
+    setPostDescription('');
+    setPostBudget(mode === 'need' ? 'Sob orçamento' : 'A combinar');
+    setPostCategory('social');
+    setSelectedPhotos([]);
+    setSelectedVideos([]);
+    setShowCreateModal(true);
+  };
+
+  const handlePhotoSelect = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    if (selectedPhotos.length + files.length > 3) {
+      toast.error('Máximo 3 fotos');
+      e.target.value = '';
+      return;
+    }
+    files.forEach((file) => {
+      if (file.size > 5_000_000) {
+        toast.error(`${file.name}: máx. 5MB`);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedPhotos((prev) => [
+          ...prev,
+          { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, dataUrl: reader.result },
+        ]);
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  };
+
+  const handleVideoSelect = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    if (selectedVideos.length + files.length > 1) {
+      toast.error('Máximo 1 vídeo');
+      e.target.value = '';
+      return;
+    }
+    files.forEach((file) => {
+      if (file.size > 20_000_000) {
+        toast.error(`${file.name}: máx. 20MB`);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedVideos((prev) => [
+          ...prev,
+          { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, dataUrl: reader.result },
+        ]);
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  };
+
+  const removePhoto = (id) => setSelectedPhotos((prev) => prev.filter((p) => p.id !== id));
+  const removeVideo = (id) => setSelectedVideos((prev) => prev.filter((v) => v.id !== id));
+
+  const handlePostSubmit = async () => {
+    if (!postDescription.trim()) {
+      toast.error('Adicione uma descrição');
+      return;
+    }
+    setLoadingPost(true);
+    try {
+      const payload = {
+        type: modalMode, // 'need' or 'offer'
+        category: postCategory,
+        title: postDescription.slice(0, 60),
+        description: postDescription,
+        images: selectedPhotos.map((p) => p.dataUrl),
+        videos: selectedVideos.map((v) => v.dataUrl),
+        budget: postBudget,
+        location: { address: postAddress, city: 'Paris' },
+      };
+      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/posts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        toast.success(modalMode === 'need' ? 'Sua demanda foi publicada!' : 'Seu serviço foi publicado!');
+        setShowCreateModal(false);
+        fetchPosts();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.detail || 'Erro ao publicar');
+      }
+    } catch (e) {
+      toast.error('Erro de conexão');
+    } finally {
+      setLoadingPost(false);
+    }
+  };
+
+  const userAvatar = user?.avatar || `https://i.pravatar.cc/150?u=${user?.email || 'me'}`;
+  const userInitial = (user?.name || 'U').charAt(0).toUpperCase();
+
+  return (
+    <div
+      className="min-h-screen bg-gray-50 pb-20 lg:pb-0"
+      style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif' }}
+      data-testid="feed-page"
+    >
+      {/* Top Navigation - Jataí Style */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-20">
+        <div className="max-w-[1200px] mx-auto px-4 py-2">
+          <div className="flex items-center justify-between">
+            {/* Mobile: Avatar */}
+            <button className="lg:hidden relative" onClick={() => navigate('/profile')} data-testid="mobile-avatar">
+              <Avatar className="w-8 h-8">
+                <AvatarImage src={userAvatar} />
+                <AvatarFallback>{userInitial}</AvatarFallback>
+              </Avatar>
+            </button>
+
+            {/* Center: Logo */}
+            <div className="flex items-center justify-center lg:justify-start">
+              <span className="text-base font-bold">
+                <span className="text-green-500">Wati</span>
+                <span className="text-orange-500">zat</span>
+              </span>
+              <p className="hidden lg:block text-[10px] text-gray-500 ml-2">Paris (France)</p>
+            </div>
+
+            {/* Desktop: Navigation */}
+            <nav className="hidden lg:flex items-center space-x-8 absolute left-1/2 -translate-x-1/2">
+              <button onClick={() => navigate('/home')} className="flex flex-col items-center text-gray-700 hover:text-gray-900 transition-colors">
+                <HomeIcon className="w-5 h-5 mb-0.5" />
+                <span className="text-[10px]">Início</span>
+              </button>
+              <button onClick={() => navigate('/volunteers')} className="flex flex-col items-center text-gray-700 hover:text-gray-900 transition-colors">
+                <Users className="w-5 h-5 mb-0.5" />
+                <span className="text-[10px]">Voluntários</span>
+              </button>
+              <button
+                onClick={() => {
+                  const el = document.getElementById('post-create-card');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="flex flex-col items-center text-green-600 -mt-1"
+                data-testid="nav-publish-desktop"
+              >
+                <div className="w-11 h-11 bg-green-500 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-green-600 transition-colors">
+                  <Plus className="w-5 h-5" strokeWidth={2.5} />
+                </div>
+                <span className="text-[10px] mt-1">Publicar</span>
+              </button>
+              <button onClick={() => navigate('/housing')} className="flex flex-col items-center text-gray-700 hover:text-gray-900 transition-colors">
+                <BarChart3 className="w-5 h-5 mb-0.5" />
+                <span className="text-[10px]">Moradia</span>
+              </button>
+              {user?.role === 'admin' && (
+                <button onClick={() => navigate('/admin')} className="flex flex-col items-center text-gray-700 hover:text-gray-900 transition-colors">
+                  <Settings className="w-5 h-5 mb-0.5" />
+                  <span className="text-[10px]">Dashboard</span>
+                </button>
+              )}
+              <button onClick={() => navigate('/chat')} className="flex flex-col items-center text-gray-700 hover:text-gray-900 transition-colors">
+                <MessageCircle className="w-5 h-5 mb-0.5" />
+                <span className="text-[10px]">Mensagens</span>
+              </button>
+            </nav>
+
+            {/* Desktop: User Avatar */}
+            <button
+              onClick={() => navigate('/profile')}
+              className="hidden lg:flex items-center space-x-2 cursor-pointer hover:bg-gray-50 px-3 py-1 rounded-lg transition-colors"
+              data-testid="desktop-avatar"
+            >
+              <Avatar className="w-8 h-8">
+                <AvatarImage src={userAvatar} />
+                <AvatarFallback>{userInitial}</AvatarFallback>
+              </Avatar>
+              <div className="text-xs">
+                <p className="font-medium">{user?.name || 'Usuário'}</p>
+              </div>
+            </button>
+
+            <div className="lg:hidden w-8" />
+          </div>
+        </div>
+      </header>
+
+      {/* Premium Banner (Salmon) */}
+      {showBanner && (
+        <div className="bg-gradient-to-r from-[#FFB6A3] to-[#FFA08A] px-4 py-3 relative">
+          <button
+            onClick={() => setShowBanner(false)}
+            className="absolute top-1 right-2 text-gray-700 hover:text-gray-900"
+            data-testid="close-banner"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <p className="text-xs text-gray-800 text-center font-medium mb-2 pr-6">
+            Encontre apoio solidário ou ofereça seus serviços para a comunidade migrante!
+          </p>
+          <div className="flex justify-center">
+            <Button
+              onClick={() => navigate('/housing')}
+              className="bg-white hover:bg-gray-50 text-gray-800 font-semibold rounded-full px-6 h-9 shadow-sm text-sm"
+              data-testid="banner-cta"
+            >
+              Explorar Hospedagem
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div className="max-w-[1200px] mx-auto px-3 lg:px-4 py-3">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          {/* Left Column - Posts */}
+          <div className="lg:col-span-7">
+            {posts.length === 0 ? (
+              <Card className="p-6 text-center text-gray-500">Nenhuma demanda ainda. Seja o primeiro a publicar!</Card>
+            ) : (
+              posts.map((post) => <PostCard key={post.id} post={post} onChat />)
+            )}
+          </div>
+
+          {/* Right Sidebar - Post Creation + Monetization */}
+          <div className="lg:col-span-5 space-y-3">
+            <Card id="post-create-card" className="p-4 bg-gray-50 border border-gray-200">
+              <h3 className="font-medium text-sm mb-3">Olá, {user?.name?.split(' ')[0] || ''}</h3>
+
+              <div className="mb-3">
+                <label className="text-xs font-semibold mb-1 block">Descrição da sua solicitação</label>
+                <textarea
+                  value={postDescription}
+                  onChange={(e) => setPostDescription(e.target.value)}
+                  placeholder="Descreva sua necessidade em detalhes..."
+                  className="w-full h-20 text-xs bg-white border border-gray-300 rounded-md p-2 resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
+                  data-testid="feed-post-description"
+                />
+              </div>
+
+              <div className="mb-3">
+                <h4 className="text-xs font-semibold mb-1">Adicione fotos</h4>
+                <p className="text-[10px] text-gray-600 mb-2 leading-relaxed">
+                  Aumente suas chances em 25% ilustrando sua necessidade.
+                </p>
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  {[0, 1, 2].map((index) => {
+                    const photo = selectedPhotos[index];
+                    return (
+                      <div key={index} className="relative aspect-square">
+                        {photo ? (
+                          <>
+                            <img
+                              src={photo.preview}
+                              alt="Preview"
+                              className="w-full h-full object-cover rounded-lg border-2 border-gray-300"
+                            />
+                            <button
+                              onClick={() => removePhoto(photo.id)}
+                              className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow-lg"
+                              data-testid={`remove-feed-photo-${index}`}
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </>
+                        ) : (
+                          <label
+                            className="w-full h-full border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-green-400 hover:bg-white transition-all bg-white"
+                            data-testid={`feed-photo-slot-${index}`}
+                          >
+                            <Camera className="w-5 h-5 text-gray-400" />
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handlePhotoSelect}
+                              className="hidden"
+                              data-testid={`feed-photo-input-${index}`}
+                            />
+                          </label>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="mb-3">
+                <label className="text-xs font-semibold mb-1 block">Endereço</label>
+                <Input
+                  value={postAddress}
+                  onChange={(e) => setPostAddress(e.target.value)}
+                  className="h-8 text-xs bg-white border-gray-300"
+                  data-testid="feed-post-address"
+                />
+              </div>
+
+              <Button
+                onClick={handlePostSubmit}
+                disabled={loadingPost}
+                className="w-full bg-green-500 hover:bg-green-600 text-white rounded-full h-9 font-semibold shadow-sm text-sm"
+                data-testid="feed-publish-button"
+              >
+                {loadingPost ? 'Publicando...' : 'Publicar minha solicitação'}
+              </Button>
+            </Card>
+
+            <Card className="p-4 bg-white border border-gray-200">
+              <h3 className="font-bold text-base mb-2">Arredonde seus fins de mês</h3>
+              <p className="text-xs text-gray-700 mb-3 leading-relaxed">
+                Responda às solicitações publicadas perto de você e ajude pessoas que precisam.
+              </p>
+              <Button
+                onClick={() => navigate('/volunteers')}
+                className="w-full bg-[#FF9B8A] hover:bg-[#FF8A79] text-white rounded-full h-9 font-semibold shadow-sm text-sm"
+                data-testid="monetize-cta"
+              >
+                Oferecer meus serviços
+              </Button>
+            </Card>
+
+            <Card className="p-4 bg-white border border-gray-200">
+              <h3 className="font-bold text-base mb-2">🏡 Moradia Solidária</h3>
+              <p className="text-xs text-gray-700 mb-3 leading-relaxed">
+                Encontre ou ofereça hospedagem para migrantes em Paris.
+              </p>
+              <Button
+                onClick={() => navigate('/housing')}
+                className="w-full bg-green-500 hover:bg-green-600 text-white rounded-full h-9 font-semibold shadow-sm text-sm"
+                data-testid="housing-cta"
+              >
+                Ver Hospedagens
+              </Button>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Bottom Navigation - Jataí Style */}
+      <div
+        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-2 flex items-center justify-around z-50 lg:hidden"
+        data-testid="bottom-navigation"
+      >
+        <button onClick={() => navigate('/home')} className="flex flex-col items-center gap-1 p-2 min-w-[60px]" data-testid="nav-home">
+          <HomeIcon className="w-6 h-6 text-gray-900" strokeWidth={2.5} />
+          <span className="text-[10px] text-gray-900 font-semibold">Início</span>
+        </button>
+        <button onClick={() => navigate('/volunteers')} className="flex flex-col items-center gap-1 p-2 min-w-[60px]" data-testid="nav-volunteers">
+          <Users className="w-6 h-6 text-gray-400" />
+          <span className="text-[10px] text-gray-500">Voluntários</span>
+        </button>
+        <button
+          onClick={() => document.getElementById('post-create-card')?.scrollIntoView({ behavior: 'smooth' })}
+          className="flex flex-col items-center gap-1 p-2 min-w-[60px] relative"
+          data-testid="nav-publish-center"
+        >
+          <div className="w-12 h-12 -mt-6 bg-green-500 rounded-full flex items-center justify-center shadow-lg hover:bg-green-600 transition-colors">
+            <Plus className="w-7 h-7 text-white" strokeWidth={2.5} />
+          </div>
+          <span className="text-[10px] text-green-600 font-semibold mt-1">Publicar</span>
+        </button>
+        {user?.role === 'admin' ? (
+          <button onClick={() => navigate('/admin')} className="flex flex-col items-center gap-1 p-2 min-w-[60px]" data-testid="nav-admin">
+            <Settings className="w-6 h-6 text-gray-400" />
+            <span className="text-[10px] text-gray-500">Admin</span>
+          </button>
+        ) : (
+          <button onClick={() => navigate('/housing')} className="flex flex-col items-center gap-1 p-2 min-w-[60px]" data-testid="nav-housing">
+            <BarChart3 className="w-6 h-6 text-gray-400" />
+            <span className="text-[10px] text-gray-500">Moradia</span>
+          </button>
+        )}
+        <button onClick={() => navigate('/chat')} className="flex flex-col items-center gap-1 p-2 min-w-[60px]" data-testid="nav-chat">
+          <MessageCircle className="w-6 h-6 text-gray-400" />
+          <span className="text-[10px] text-gray-500">Mensagens</span>
+        </button>
+      </div>
+    </div>
+  );
+}
