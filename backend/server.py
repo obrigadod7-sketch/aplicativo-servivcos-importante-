@@ -405,15 +405,21 @@ async def add_comment(post_id: str, comment_data: PostCommentCreate, current_use
 @api_router.get("/posts/{post_id}/comments")
 async def get_comments(post_id: str):
     comments = await db.comments.find({'post_id': post_id}, {'_id': 0}).sort('created_at', 1).to_list(1000)
-    
+
+    # Batch fetch users to avoid N+1
+    user_ids = list({c['user_id'] for c in comments})
+    users_dict = {}
+    if user_ids:
+        async for u in db.users.find({'id': {'$in': user_ids}}, {'_id': 0, 'password': 0, 'email': 0}):
+            users_dict[u['id']] = u
+
     for comment in comments:
         if isinstance(comment['created_at'], str):
             comment['created_at'] = datetime.fromisoformat(comment['created_at'])
-        
-        user = await db.users.find_one({'id': comment['user_id']}, {'_id': 0, 'password': 0, 'email': 0})
+        user = users_dict.get(comment['user_id'])
         if user:
             comment['user'] = {'name': user['name'], 'role': user['role']}
-    
+
     return comments
 
 @api_router.get("/posts")
