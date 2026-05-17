@@ -297,7 +297,7 @@ export default function DirectChatPage() {
               </div>
               <span className="text-[11px] text-[#16a34a] font-medium mt-0.5">Demanda</span>
             </button>
-            <NavBtn label="Assinatura" icon={<BarChart3 size={18} />} onClick={() => navigate('/profile')} />
+            <NavBtn label="Assinatura" icon={<BarChart3 size={18} />} onClick={() => navigate('/assinatura')} />
             <NavBtn label="Mensagens" icon={<MessageSquare size={18} />} active onClick={() => navigate('/chat')} />
           </nav>
 

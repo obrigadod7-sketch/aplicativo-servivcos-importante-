@@ -1,0 +1,41 @@
+{
+  "summary": "Full e2e testing of Subscription/PIX BR Code feature + Demanda Pública modal. Backend pytest 10/10 passed: status, start (BR Code + CRC16 valid + valid PNG base64 QR), confirm-payment (pending_verification), admin endpoints correctly 403 for non-admin. Frontend: /assinatura renders 3-column layout (sidebar with menu items, center 'Gerenciar meu perímetro' with raio slider, right orange card 'Passe para a velocidade superior' with bullets + 'Eu me inscrevo' button). 'Eu me inscrevo' triggers POST /api/subscription/start (200) and opens PIX modal showing '3 DIAS GRÁTIS' badge, R$ 35,90, QR PNG, BR Code copia-e-cola, Copiar btn, 'Já paguei' which triggers /confirm-payment (200). FeedPage: '+' green Publicar button opens centralized Demanda pública modal with all elements (description+0/250 counter, 3 photo slots, address, budget select, category select, 'Postar minha demanda' green button, toggle Demanda paga | Ajuda Voluntária). Toggle 'Ajuda Voluntária' navigates to /volunteers as required. Form submit creates post via POST /api/posts (200) and closes modal. Top nav includes 'Assinatura' link.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Demanda Publica modal & PIX modal", "issues": ["Console accessibility warning: 'DialogContent requires a DialogTitle for screen reader users' on both modals - add VisuallyHidden DialogTitle for a11y compliance (minor a11y, does not affect functionality)."]},
+      {"screen": "FeedPage top nav", "issues": ["When toast 'Login bem-sucedido!' is visible (~3s) it overlaps the top nav center icons and can intercept clicks for power-users right after login - not a real bug; visual overlap only."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_subscription_pix.py",
+    "/app/test_reports/pytest/subscription_pix.xml"
+  ],
+  "action_items": [
+    "(Optional / low priority) Add a VisuallyHidden DialogTitle to demanda-modal and pix-modal to silence Radix Dialog a11y console warnings.",
+    "(Optional) Reduce toast overlap with top nav on /home post-login (auto-dismiss faster or place toast below header)."
+  ],
+  "critical_code_review_comments": [
+    "pix_generator.py is clean and spec-compliant (CRC16-CCITT poly 0x1021, init 0xFFFF; TLV fields 00/01/26/52/53/54/58/59/60/62/63). Verified BR Code passes self-CRC check (196 chars, starts 000201, valid 4-hex suffix). QR PNG is valid (signature 89 50 4E 47).",
+    "SubscriptionPage uses inline styles for layout - acceptable since under 700 lines.",
+    "FeedPage.js is 718 lines - approaching the 700 line threshold. Recommend splitting Demanda Publica modal into a <DemandaPublicaModal/> component for maintainability.",
+    "/api/subscription/start is idempotent (reuses existing sub for user) - good. trial_ends_at preserved on re-call.",
+    "Admin endpoints correctly check current_user.role == 'admin' with 403. Untested with real admin user (no admin in seeded creds).",
+    "subscription/confirm-payment correctly returns 404 when no subscription exists for the user."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_subscription_pix.py (new)"
+  ],
+  "success_rate": {"backend": "100% (10/10 pytest)", "frontend": "100% (all required flows verified)"},
+  "test_credentials": "maria@test.com / test123 (migrant), carlos@test.com / test123 (volunteer). No admin user available - admin endpoints only tested for 403 path.",
+  "seed_data_creation": "Created subscription record for maria@test.com (status=pending_verification after test) and one TEST_DEMANDA_PUB post via POST /api/posts. Both persist in DB.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Subscription/PIX feature complete & functional. BR Code is valid EMV/BCB-compliant (CRC16-CCITT verified). PIX is static QR (no provider integration needed). To test admin activate endpoint with real admin: directly update a user's role to 'admin' in MongoDB or seed an admin via DB. Maria has a pending_verification subscription left over - admin can mark it active to test that path. FeedPage modal opens with real-user clicks; Playwright .click(force=True) on nav-publish-desktop occasionally needs page.evaluate() click due to nested div hit-test, but this does NOT affect real users.",
+  "rca of the issue": "N/A - all required features working."
+}

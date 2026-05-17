@@ -2129,6 +2129,147 @@ async def update_housing_status(
     
     return {'message': f'Status atualizado para {new_status}'}
 
+
+# ==================== SUBSCRIPTION / PIX ====================
+from pix_generator import build_pix_brcode, generate_pix_qr_base64
+
+# Configurações do plano (pode mover para env vars depois)
+SUB_AMOUNT = float(os.environ.get('SUB_AMOUNT', '35.90'))
+SUB_TRIAL_DAYS = int(os.environ.get('SUB_TRIAL_DAYS', '3'))
+PIX_KEY = os.environ.get('PIX_KEY', 'jatairegiao@suporte.com')
+PIX_MERCHANT_NAME = os.environ.get('PIX_MERCHANT_NAME', 'JATAI REGIAO TRABALHO')
+PIX_MERCHANT_CITY = os.environ.get('PIX_MERCHANT_CITY', 'SAO PAULO')
+
+
+class SubscriptionStartResponse(BaseModel):
+    subscription_id: str
+    status: str
+    trial_ends_at: str
+    amount: float
+    brcode: str
+    qr_code_base64: str
+    pix_key: str
+
+
+@api_router.get("/subscription/status")
+async def subscription_status(current_user: User = Depends(get_current_user)):
+    sub = await db.subscriptions.find_one({'user_id': current_user.id}, {'_id': 0})
+    if not sub:
+        return {'active': False, 'has_subscription': False}
+    now = datetime.now(timezone.utc)
+    trial_ends = datetime.fromisoformat(sub['trial_ends_at']) if isinstance(sub.get('trial_ends_at'), str) else sub.get('trial_ends_at')
+    in_trial = trial_ends and trial_ends > now
+    return {
+        'has_subscription': True,
+        'active': sub.get('status') == 'active' or in_trial,
+        'status': sub.get('status'),
+        'in_trial': bool(in_trial),
+        'trial_ends_at': sub.get('trial_ends_at'),
+        'amount': sub.get('amount', SUB_AMOUNT),
+        'paid_at': sub.get('paid_at'),
+    }
+
+
+@api_router.post("/subscription/start", response_model=SubscriptionStartResponse)
+async def subscription_start(current_user: User = Depends(get_current_user)):
+    """Inicia trial de 3 dias e gera QR Code PIX para cobrança recorrente."""
+    now = datetime.now(timezone.utc)
+    trial_ends = now + timedelta(days=SUB_TRIAL_DAYS)
+
+    sub = await db.subscriptions.find_one({'user_id': current_user.id}, {'_id': 0})
+    if sub:
+        sub_id = sub['id']
+        trial_ends_iso = sub.get('trial_ends_at') or trial_ends.isoformat()
+    else:
+        sub_id = str(uuid.uuid4())
+        trial_ends_iso = trial_ends.isoformat()
+        await db.subscriptions.insert_one({
+            'id': sub_id,
+            'user_id': current_user.id,
+            'status': 'trial',
+            'amount': SUB_AMOUNT,
+            'trial_ends_at': trial_ends_iso,
+            'created_at': now.isoformat(),
+            'paid_at': None,
+        })
+
+    # txid curto (sem hifens)
+    txid = sub_id.replace('-', '')[:25]
+    brcode = build_pix_brcode(
+        pix_key=PIX_KEY,
+        merchant_name=PIX_MERCHANT_NAME,
+        merchant_city=PIX_MERCHANT_CITY,
+        amount=SUB_AMOUNT,
+        txid=txid,
+        description=f"Assinatura {current_user.name[:20]}",
+    )
+    qr_base64 = generate_pix_qr_base64(brcode)
+
+    return SubscriptionStartResponse(
+        subscription_id=sub_id,
+        status='trial',
+        trial_ends_at=trial_ends_iso,
+        amount=SUB_AMOUNT,
+        brcode=brcode,
+        qr_code_base64=qr_base64,
+        pix_key=PIX_KEY,
+    )
+
+
+class SubscriptionConfirmRequest(BaseModel):
+    transaction_id: Optional[str] = None
+    proof_message: Optional[str] = None
+
+
+@api_router.post("/subscription/confirm-payment")
+async def subscription_confirm(payload: SubscriptionConfirmRequest, current_user: User = Depends(get_current_user)):
+    """Usuário declara que pagou. Status fica 'pending_verification' até admin aprovar."""
+    sub = await db.subscriptions.find_one({'user_id': current_user.id}, {'_id': 0})
+    if not sub:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+    await db.subscriptions.update_one(
+        {'id': sub['id']},
+        {'$set': {
+            'status': 'pending_verification',
+            'declared_at': datetime.now(timezone.utc).isoformat(),
+            'transaction_id': payload.transaction_id,
+            'proof_message': payload.proof_message,
+        }}
+    )
+    return {'ok': True, 'status': 'pending_verification'}
+
+
+@api_router.get("/admin/subscriptions")
+async def admin_list_subscriptions(current_user: User = Depends(get_current_user)):
+    if current_user.role != 'admin':
+        raise HTTPException(status_code=403, detail="Admin only")
+    subs = await db.subscriptions.find({}, {'_id': 0}).to_list(1000)
+    # Enrich with user data
+    user_ids = list({s['user_id'] for s in subs})
+    users = {u['id']: u async for u in db.users.find({'id': {'$in': user_ids}}, {'_id': 0, 'password': 0})}
+    for s in subs:
+        s['user'] = users.get(s['user_id'])
+    return subs
+
+
+@api_router.post("/admin/subscriptions/{sub_id}/activate")
+async def admin_activate_subscription(sub_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != 'admin':
+        raise HTTPException(status_code=403, detail="Admin only")
+    now = datetime.now(timezone.utc)
+    result = await db.subscriptions.update_one(
+        {'id': sub_id},
+        {'$set': {
+            'status': 'active',
+            'paid_at': now.isoformat(),
+            'activated_by': current_user.id,
+        }}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+    return {'ok': True}
+
+
 app.include_router(api_router)
 
 # Health check na raiz para o Render

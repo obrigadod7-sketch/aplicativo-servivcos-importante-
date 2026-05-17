@@ -331,10 +331,7 @@ export default function FeedPage() {
                 <span className="text-[10px]">Voluntários</span>
               </button>
               <button
-                onClick={() => {
-                  const el = document.getElementById('post-create-card');
-                  if (el) el.scrollIntoView({ behavior: 'smooth' });
-                }}
+                onClick={() => openModal('need')}
                 className="flex flex-col items-center text-green-600 -mt-1"
                 data-testid="nav-publish-desktop"
               >
@@ -346,6 +343,10 @@ export default function FeedPage() {
               <button onClick={() => navigate('/housing')} className="flex flex-col items-center text-gray-700 hover:text-gray-900 transition-colors">
                 <BarChart3 className="w-5 h-5 mb-0.5" />
                 <span className="text-[10px]">Moradia</span>
+              </button>
+              <button onClick={() => navigate('/assinatura')} className="flex flex-col items-center text-gray-700 hover:text-gray-900 transition-colors" data-testid="nav-assinatura-desktop">
+                <BarChart3 className="w-5 h-5 mb-0.5" />
+                <span className="text-[10px]">Assinatura</span>
               </button>
               {user?.role === 'admin' && (
                 <button onClick={() => navigate('/admin')} className="flex flex-col items-center text-gray-700 hover:text-gray-900 transition-colors">
@@ -543,7 +544,7 @@ export default function FeedPage() {
           <span className="text-[10px] text-gray-500">Voluntários</span>
         </button>
         <button
-          onClick={() => document.getElementById('post-create-card')?.scrollIntoView({ behavior: 'smooth' })}
+          onClick={() => openModal('need')}
           className="flex flex-col items-center gap-1 p-2 min-w-[60px] relative"
           data-testid="nav-publish-center"
         >
@@ -568,6 +569,149 @@ export default function FeedPage() {
           <span className="text-[10px] text-gray-500">Mensagens</span>
         </button>
       </div>
+
+      {/* ============ DEMANDA PUBLICA MODAL ============ */}
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent
+          className="max-w-md p-0 overflow-hidden rounded-2xl border-2 border-blue-500 max-h-[90vh] overflow-y-auto"
+          data-testid="demanda-modal"
+        >
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2 text-gray-900 font-bold text-lg">
+                <span className="inline-flex w-7 h-7 rounded-full bg-gray-100 items-center justify-center">
+                  <MapPin className="w-4 h-4 text-gray-700" />
+                </span>
+                Demanda pública
+              </div>
+            </div>
+
+            {/* Toggle: demanda paga vs ajuda voluntária */}
+            <div className="flex gap-2 mb-5 bg-gray-100 p-1 rounded-full">
+              <button
+                onClick={() => setModalMode('need')}
+                data-testid="mode-demanda"
+                className={`flex-1 text-sm font-semibold py-2 px-3 rounded-full transition ${
+                  modalMode === 'need' ? 'bg-white text-gray-900 shadow' : 'text-gray-500'
+                }`}
+              >
+                Demanda paga
+              </button>
+              <button
+                onClick={() => { setShowCreateModal(false); navigate('/volunteers'); }}
+                data-testid="ajuda-voluntaria-btn"
+                className="flex-1 text-sm font-semibold py-2 px-3 rounded-full text-orange-600 hover:bg-orange-50"
+              >
+                Ajuda Voluntária
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-gray-900 mb-2">Descreva sua necessidade</label>
+              <textarea
+                value={postDescription}
+                onChange={(e) => setPostDescription(e.target.value.slice(0, 250))}
+                placeholder="Olá,"
+                rows={4}
+                className="w-full text-sm border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                data-testid="modal-description"
+              />
+              <p className="text-[11px] text-gray-400 mt-1">{postDescription.length}/250 min</p>
+            </div>
+
+            <div className="mb-4">
+              <h4 className="text-sm font-semibold text-gray-900 mb-1">Adicione fotos</h4>
+              <p className="text-[11px] text-gray-500 mb-3">
+                Aumente suas chances de fazer negócio em 25% ilustrando sua necessidade.
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {[0, 1, 2].map((i) => {
+                  const photo = selectedPhotos[i];
+                  return (
+                    <div key={i} className="aspect-square relative">
+                      {photo ? (
+                        <>
+                          <img src={photo.dataUrl} alt="" className="w-full h-full object-cover rounded-xl border-2 border-gray-300" />
+                          <button
+                            onClick={() => removePhoto(photo.id)}
+                            className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 text-white rounded-full grid place-items-center shadow"
+                            data-testid={`modal-remove-photo-${i}`}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </>
+                      ) : (
+                        <label
+                          className="w-full h-full border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition"
+                          data-testid={`modal-photo-slot-${i}`}
+                        >
+                          <Camera className="w-6 h-6 text-gray-400" />
+                          <span className="text-[10px] text-gray-400 mt-1">Adicionar</span>
+                          <input type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
+                        </label>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-gray-900 mb-2">Endereço</label>
+              <Input
+                value={postAddress}
+                onChange={(e) => setPostAddress(e.target.value)}
+                className="h-10 text-sm rounded-xl border-gray-300"
+                placeholder="Endereço completo"
+                data-testid="modal-address"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-gray-900 mb-2">Orçamento</label>
+              <select
+                value={postBudget}
+                onChange={(e) => setPostBudget(e.target.value)}
+                data-testid="modal-budget"
+                className="w-full h-10 text-sm border border-gray-300 rounded-xl px-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+              >
+                <option value="">Selecione</option>
+                <option value="Sob orçamento">Sob orçamento</option>
+                <option value="Até R$ 100">Até R$ 100</option>
+                <option value="R$ 100 - 300">R$ 100 - R$ 300</option>
+                <option value="R$ 300 - 500">R$ 300 - R$ 500</option>
+                <option value="R$ 500 - 1000">R$ 500 - R$ 1000</option>
+                <option value="Acima de R$ 1000">Acima de R$ 1.000</option>
+                <option value="A combinar">A combinar</option>
+              </select>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-900 mb-2">Categoria</label>
+              <select
+                value={postCategory}
+                onChange={(e) => setPostCategory(e.target.value)}
+                data-testid="modal-category"
+                className="w-full h-10 text-sm border border-gray-300 rounded-xl px-3 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+              >
+                <option value="">Selecione</option>
+                {CATEGORY_OPTIONS.map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <Button
+              onClick={handlePostSubmit}
+              disabled={loadingPost || !postDescription.trim()}
+              data-testid="modal-submit"
+              className="w-full bg-green-500 hover:bg-green-600 text-white rounded-full h-12 font-bold shadow disabled:opacity-50"
+            >
+              {loadingPost ? 'Publicando...' : 'Postar minha demanda'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

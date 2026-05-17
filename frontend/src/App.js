@@ -20,6 +20,7 @@ import NearbyHelpersPage from './pages/NearbyHelpersPage';
 import MapPage from './pages/MapPage';
 import JobsPage from './pages/JobsPage';
 import HousingPage from './pages/HousingPage';
+import SubscriptionPage from './pages/SubscriptionPage';
 
 export const AuthContext = React.createContext();
 
@@ -100,6 +101,7 @@ function App() {
           <Route path="/nearby" element={user ? <NearbyHelpersPage /> : <Navigate to="/" />} />
           <Route path="/map" element={user ? <MapPage /> : <Navigate to="/" />} />
           <Route path="/volunteer-register" element={<VolunteerRegisterPage />} />
+          <Route path="/assinatura" element={user ? <SubscriptionPage /> : <Navigate to="/" />} />
         </Routes>
       </BrowserRouter>
     </AuthContext.Provider>
