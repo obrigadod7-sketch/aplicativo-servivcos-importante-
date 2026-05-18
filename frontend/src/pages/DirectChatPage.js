@@ -9,7 +9,7 @@ import {
   Phone, MessageCircle, CheckCheck, MoreVertical, Camera, Search, Star,
   Home as HomeIcon, Users as UsersIcon, Plus, BarChart3, MessageSquare,
   Video as VideoIcon, X as XIcon, Calendar, CreditCard, Star as StarIcon,
-  Share2, Pin, Archive, Flag, Ban, ChevronRight
+  Share2, Pin, Archive, Flag, Ban, ChevronRight, Copy, Clock, MoreHorizontal
 } from 'lucide-react';
 import { toast } from 'sonner';
 import MapPreview from '../components/MapPreview';
@@ -61,6 +61,91 @@ export default function DirectChatPage() {
   const [convFilter, setConvFilter] = useState('all'); // all | unread | archived
   const [search, setSearch] = useState('');
   const [showPostPreview, setShowPostPreview] = useState(false);
+
+  // ====== Action modals ======
+  const [activeModal, setActiveModal] = useState(null); // 'refuse' | 'schedule' | 'payment' | 'more' | null
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [scheduleTime, setScheduleTime] = useState('');
+  const [scheduleNote, setScheduleNote] = useState('');
+  const [payAmount, setPayAmount] = useState('');
+  const [payDescription, setPayDescription] = useState('');
+  const [pixCharge, setPixCharge] = useState(null); // {brcode, qr_code_base64}
+  const [loadingAction, setLoadingAction] = useState(false);
+
+  // ====== Action handlers ======
+  const handleRefuse = async () => {
+    setLoadingAction(true);
+    try {
+      await sendSystemMessage('❌ Solicitação recusada. Obrigado pelo contato.');
+      toast.success('Solicitação recusada');
+      setActiveModal(null);
+    } catch { toast.error('Erro ao recusar'); }
+    finally { setLoadingAction(false); }
+  };
+
+  const handleSchedule = async () => {
+    if (!scheduleDate || !scheduleTime) {
+      toast.error('Selecione data e hora');
+      return;
+    }
+    setLoadingAction(true);
+    try {
+      const d = new Date(`${scheduleDate}T${scheduleTime}`);
+      const formatted = d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+      const msg = `📅 Agendamento proposto: ${formatted}${scheduleNote ? `\n📝 ${scheduleNote}` : ''}`;
+      await sendSystemMessage(msg);
+      toast.success('Agendamento enviado!');
+      setActiveModal(null);
+      setScheduleDate(''); setScheduleTime(''); setScheduleNote('');
+    } catch { toast.error('Erro ao agendar'); }
+    finally { setLoadingAction(false); }
+  };
+
+  const handleGeneratePix = async () => {
+    const amount = parseFloat(payAmount.replace(',', '.'));
+    if (!amount || amount <= 0) {
+      toast.error('Informe um valor válido');
+      return;
+    }
+    setLoadingAction(true);
+    try {
+      const r = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/payments/pix-charge`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          amount,
+          to_user_id: userId,
+          description: payDescription || `Pagamento de serviço - ${otherUser?.name || ''}`,
+        }),
+      });
+      if (r.ok) {
+        const data = await r.json();
+        setPixCharge(data);
+        // Auto-envia mensagem com QR
+        const summary = `💳 Cobrança PIX gerada\nValor: R$ ${amount.toFixed(2).replace('.', ',')}\n${payDescription || 'Pagamento de serviço'}\n\nPIX Copia e Cola:\n${data.brcode}`;
+        await sendSystemMessage(summary);
+        toast.success('PIX enviado no chat!');
+      } else {
+        toast.error('Erro ao gerar PIX');
+      }
+    } catch { toast.error('Erro de conexão'); }
+    finally { setLoadingAction(false); }
+  };
+
+  const sendSystemMessage = async (text) => {
+    const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/messages`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to_user_id: userId, message: text }),
+    });
+    if (response.ok) fetchMessages();
+    return response.ok;
+  };
+
+  const closePaymentModal = () => {
+    setActiveModal(null);
+    setPayAmount(''); setPayDescription(''); setPixCharge(null);
+  };
 
   // ====== Fetchers (lógica original preservada) ======
   useEffect(() => {
@@ -550,10 +635,10 @@ export default function DirectChatPage() {
           {canChat && (
             <div className="hidden md:block border-t border-gray-100 px-6 py-3">
               <div className="flex items-center gap-2 flex-wrap">
-                <ActionBtn icon={<XIcon size={16} />} label="Recusar" onClick={() => toast.info('Solicitação recusada')} testid="action-refuse" />
-                <ActionBtn icon={<Calendar size={16} />} label="Agendar" onClick={() => toast.info('Abrir agenda...')} testid="action-schedule" />
-                <ActionBtn icon={<CreditCard size={16} />} label="Pagamento" onClick={() => toast.info('Fluxo de pagamento')} testid="action-payment" />
-                <ActionBtn icon={<StarIcon size={16} />} label="Avaliar" onClick={() => toast.info('Avaliação iniciada')} testid="action-rate" />
+                <ActionBtn icon={<XIcon size={16} className="text-red-500" />} label="Recusar" onClick={() => setActiveModal('refuse')} testid="action-refuse" />
+                <ActionBtn icon={<Calendar size={16} className="text-blue-500" />} label="Agendar" onClick={() => setActiveModal('schedule')} testid="action-schedule" />
+                <ActionBtn icon={<CreditCard size={16} className="text-green-500" />} label="Pagamento" onClick={() => setActiveModal('payment')} testid="action-payment" />
+                <ActionBtn icon={<MoreHorizontal size={16} />} label="Ver tudo" onClick={() => setActiveModal('more')} testid="action-more" />
               </div>
             </div>
           )}
@@ -688,6 +773,149 @@ export default function DirectChatPage() {
         </aside>
       </div>
 
+      {/* ===== ACTION MODALS ===== */}
+      {activeModal === 'refuse' && (
+        <ModalShell title="Recusar solicitação" onClose={() => setActiveModal(null)}>
+          <p className="text-sm text-gray-600 mb-5">
+            Deseja recusar esta solicitação de serviço? O outro usuário será notificado.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveModal(null)}
+              className="flex-1 h-11 rounded-full border border-gray-300 font-medium hover:bg-gray-50"
+              data-testid="refuse-cancel"
+            >Cancelar</button>
+            <button
+              onClick={handleRefuse}
+              disabled={loadingAction}
+              data-testid="refuse-confirm"
+              className="flex-1 h-11 rounded-full bg-red-500 text-white font-semibold hover:bg-red-600 disabled:opacity-60"
+            >{loadingAction ? 'Enviando...' : 'Sim, recusar'}</button>
+          </div>
+        </ModalShell>
+      )}
+
+      {activeModal === 'schedule' && (
+        <ModalShell title="Agendar visita / serviço" onClose={() => setActiveModal(null)}>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-gray-600 mb-1 block">Data</label>
+              <input
+                type="date"
+                value={scheduleDate}
+                onChange={(e) => setScheduleDate(e.target.value)}
+                min={new Date().toISOString().slice(0, 10)}
+                data-testid="schedule-date"
+                className="w-full h-11 px-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-600 mb-1 block">Hora</label>
+              <input
+                type="time"
+                value={scheduleTime}
+                onChange={(e) => setScheduleTime(e.target.value)}
+                data-testid="schedule-time"
+                className="w-full h-11 px-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-600 mb-1 block">Observação (opcional)</label>
+              <Textarea
+                value={scheduleNote}
+                onChange={(e) => setScheduleNote(e.target.value)}
+                placeholder="Ex: chegarei pela entrada lateral, levarei ferramentas..."
+                rows={2}
+                data-testid="schedule-note"
+                className="resize-none border-gray-300 rounded-xl text-sm"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 mt-5">
+            <button
+              onClick={() => setActiveModal(null)}
+              className="flex-1 h-11 rounded-full border border-gray-300 font-medium hover:bg-gray-50"
+            >Cancelar</button>
+            <button
+              onClick={handleSchedule}
+              disabled={loadingAction || !scheduleDate || !scheduleTime}
+              data-testid="schedule-confirm"
+              className="flex-1 h-11 rounded-full bg-blue-500 text-white font-semibold hover:bg-blue-600 disabled:opacity-60"
+            >{loadingAction ? 'Enviando...' : 'Propor horário'}</button>
+          </div>
+        </ModalShell>
+      )}
+
+      {activeModal === 'payment' && (
+        <ModalShell title={pixCharge ? 'PIX gerado!' : 'Cobrar via PIX'} onClose={closePaymentModal}>
+          {!pixCharge ? (
+            <>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-gray-600 mb-1 block">Valor (R$)</label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={payAmount}
+                    onChange={(e) => setPayAmount(e.target.value.replace(/[^0-9.,]/g, ''))}
+                    placeholder="Ex: 150,00"
+                    data-testid="pay-amount"
+                    className="w-full h-11 px-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-600 mb-1 block">Descrição (opcional)</label>
+                  <Textarea
+                    value={payDescription}
+                    onChange={(e) => setPayDescription(e.target.value.slice(0, 80))}
+                    placeholder="Ex: instalação do chuveiro"
+                    rows={2}
+                    data-testid="pay-description"
+                    className="resize-none border-gray-300 rounded-xl text-sm"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 mt-5">
+                <button onClick={closePaymentModal} className="flex-1 h-11 rounded-full border border-gray-300 font-medium hover:bg-gray-50">Cancelar</button>
+                <button
+                  onClick={handleGeneratePix}
+                  disabled={loadingAction || !payAmount}
+                  data-testid="pay-generate"
+                  className="flex-1 h-11 rounded-full bg-green-500 text-white font-semibold hover:bg-green-600 disabled:opacity-60"
+                >{loadingAction ? 'Gerando...' : 'Gerar PIX'}</button>
+              </div>
+            </>
+          ) : (
+            <div className="text-center">
+              <img src={pixCharge.qr_code_base64} alt="QR PIX" className="w-48 h-48 mx-auto bg-white rounded-lg" data-testid="pix-charge-qr" />
+              <p className="font-semibold text-green-700 mt-3 text-lg">R$ {parseFloat(payAmount.replace(',', '.')).toFixed(2).replace('.', ',')}</p>
+              <p className="text-xs text-gray-500 mb-3">{payDescription || 'Pagamento de serviço'}</p>
+              <button
+                onClick={() => { navigator.clipboard.writeText(pixCharge.brcode); toast.success('Copiado!'); }}
+                data-testid="pix-charge-copy"
+                className="w-full h-11 rounded-full bg-gray-900 text-white font-medium flex items-center justify-center gap-2 hover:bg-black"
+              ><Copy size={16} /> Copiar PIX Copia e Cola</button>
+              <button onClick={closePaymentModal} className="w-full h-11 mt-2 rounded-full border border-gray-300 font-medium hover:bg-gray-50">Fechar</button>
+              <p className="text-[11px] text-gray-400 mt-3">PIX já foi enviado no chat</p>
+            </div>
+          )}
+        </ModalShell>
+      )}
+
+      {activeModal === 'more' && (
+        <ModalShell title="Mais opções" onClose={() => setActiveModal(null)}>
+          <div className="space-y-1">
+            <MoreOption icon={<StarIcon size={18} className="text-amber-500" />} label="Avaliar este profissional" onClick={() => { toast.info('Avaliação em breve'); setActiveModal(null); }} />
+            <MoreOption icon={<Share2 size={18} className="text-blue-500" />} label="Compartilhar conversa" onClick={() => { toast.info('Compartilhamento copiado'); setActiveModal(null); }} />
+            <MoreOption icon={<Pin size={18} className="text-purple-500" />} label="Fixar conversa" onClick={() => { toast.success('Conversa fixada'); setActiveModal(null); }} />
+            <MoreOption icon={<Archive size={18} className="text-gray-500" />} label="Arquivar conversa" onClick={() => { toast.success('Conversa arquivada'); setActiveModal(null); }} />
+            <div className="my-2 border-t border-gray-100" />
+            <MoreOption icon={<Flag size={18} className="text-red-500" />} label="Reportar usuário" danger onClick={() => { toast.warning('Usuário reportado'); setActiveModal(null); }} />
+            <MoreOption icon={<Ban size={18} className="text-red-500" />} label="Bloquear usuário" danger onClick={() => { toast.warning('Usuário bloqueado'); setActiveModal(null); }} />
+          </div>
+        </ModalShell>
+      )}
+
       {/* ===== MOBILE BOTTOM NAV (only mobile) ===== */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 px-2 py-2 flex items-end justify-around" data-testid="mobile-bottom-nav">
         <MobileNavItem icon={<HomeIcon size={22} />} label="Início" onClick={() => navigate('/home')} testid="mob-nav-home" />
@@ -757,3 +985,38 @@ const PanelLink = ({ icon, label, onClick, danger, testid }) => (
     <ChevronRight size={14} className="text-gray-300" />
   </button>
 );
+
+const ModalShell = ({ title, children, onClose }) => (
+  <div
+    className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4"
+    onClick={onClose}
+    data-testid="action-modal"
+  >
+    <div
+      className="bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl p-6 max-h-[90vh] overflow-y-auto"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+        <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100" data-testid="action-modal-close">
+          <XIcon size={20} />
+        </button>
+      </div>
+      {children}
+    </div>
+  </div>
+);
+
+const MoreOption = ({ icon, label, onClick, danger }) => (
+  <button
+    onClick={onClick}
+    className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm transition ${
+      danger ? 'text-red-600 hover:bg-red-50' : 'text-gray-800 hover:bg-gray-50'
+    }`}
+  >
+    {icon}
+    <span className="flex-1 text-left font-medium">{label}</span>
+    <ChevronRight size={14} className="text-gray-300" />
+  </button>
+);
+

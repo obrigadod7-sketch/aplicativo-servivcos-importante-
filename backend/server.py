@@ -2281,6 +2281,48 @@ async def admin_activate_subscription(sub_id: str, current_user: User = Depends(
     return {'ok': True}
 
 
+# ==================== PIX charges (service payments between users) ====================
+class PixChargeRequest(BaseModel):
+    amount: float
+    to_user_id: str
+    description: Optional[str] = ""
+
+
+@api_router.post("/payments/pix-charge")
+async def create_pix_charge(payload: PixChargeRequest, current_user: User = Depends(get_current_user)):
+    """Gera um QR Code PIX para cobrar outro usuário (não é assinatura)."""
+    if payload.amount <= 0 or payload.amount > 50000:
+        raise HTTPException(status_code=400, detail="Invalid amount")
+    charge_id = str(uuid.uuid4())
+    txid = charge_id.replace('-', '')[:25]
+    brcode = build_pix_brcode(
+        pix_key=PIX_KEY,
+        merchant_name=PIX_MERCHANT_NAME,
+        merchant_city=PIX_MERCHANT_CITY,
+        amount=payload.amount,
+        txid=txid,
+        description=(payload.description or "Servico")[:25],
+    )
+    qr_base64 = generate_pix_qr_base64(brcode)
+    await db.pix_charges.insert_one({
+        'id': charge_id,
+        'from_user_id': current_user.id,
+        'to_user_id': payload.to_user_id,
+        'amount': payload.amount,
+        'description': payload.description,
+        'status': 'pending',
+        'brcode': brcode,
+        'created_at': datetime.now(timezone.utc).isoformat(),
+    })
+    return {
+        'charge_id': charge_id,
+        'amount': payload.amount,
+        'brcode': brcode,
+        'qr_code_base64': qr_base64,
+        'pix_key': PIX_KEY,
+    }
+
+
 app.include_router(api_router)
 
 # Health check na raiz para o Render
