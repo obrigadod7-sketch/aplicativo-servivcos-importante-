@@ -7,6 +7,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Heart, Share2, MessageSquare, MapPin, Globe, Camera, X, Home as HomeIcon, Users, Plus, BarChart3, MessageCircle, Settings, Film, Wrench, Bell, Menu } from 'lucide-react';
+import VideoPlayer from '../components/VideoPlayer';
 import { Dialog, DialogContent } from '../components/ui/dialog';
 import { toast } from 'sonner';
 
@@ -91,12 +92,10 @@ const PostCard = ({ post, onChat }) => {
             {videos.length > 0 && (
               <div className="mt-2 mb-2 space-y-2">
                 {videos.map((vid, idx) => (
-                  <video
+                  <VideoPlayer
                     key={idx}
-                    data-testid={`post-card-video-${idx}`}
                     src={vid}
-                    controls
-                    className="w-full max-h-[400px] rounded-md border border-gray-200 bg-black"
+                    testid={`post-card-video-${idx}`}
                   />
                 ))}
               </div>
@@ -233,8 +232,17 @@ export default function FeedPage() {
       return;
     }
     files.forEach((file) => {
-      if (file.size > 20_000_000) {
-        toast.error(`${file.name}: máx. 20MB`);
+      // MongoDB has 16MB doc limit; base64 grows ~33%, so 4MB raw = ~5.3MB base64.
+      if (file.size > 4_000_000) {
+        toast.error(`Vídeo muito grande (${(file.size / 1_000_000).toFixed(1)}MB). Máximo 4MB.`);
+        e.target.value = '';
+        return;
+      }
+      // Warn about MOV/QuickTime (iPhone default) - Chrome desktop can't decode
+      const mime = (file.type || '').toLowerCase();
+      if (mime.includes('quicktime') || file.name.toLowerCase().endsWith('.mov')) {
+        toast.error('Formato MOV não roda em todos os navegadores. Use MP4 (Câmera → Configurações → Formato compatível).');
+        e.target.value = '';
         return;
       }
       const reader = new FileReader();
@@ -243,6 +251,7 @@ export default function FeedPage() {
           ...prev,
           { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, dataUrl: reader.result },
         ]);
+        toast.success('Vídeo adicionado!');
       };
       reader.readAsDataURL(file);
     });
@@ -727,15 +736,14 @@ export default function FeedPage() {
             <div className="mb-4">
               <h4 className="text-sm font-semibold text-gray-900 mb-1">Adicione um vídeo</h4>
               <p className="text-[11px] text-gray-500 mb-3">
-                Opcional (até 20MB). Aumenta a chance de resposta.
+                Opcional · MP4/WebM até 4MB · Não suporta MOV do iPhone.
               </p>
               {selectedVideos.length > 0 ? (
                 <div className="relative">
-                  <video
+                  <VideoPlayer
                     src={selectedVideos[0].dataUrl}
-                    controls
-                    className="w-full max-h-48 rounded-xl border border-gray-300 bg-black"
-                    data-testid="modal-video-preview"
+                    className="max-h-48"
+                    testid="modal-video-preview"
                   />
                   <button
                     onClick={() => removeVideo(selectedVideos[0].id)}
@@ -751,8 +759,8 @@ export default function FeedPage() {
                   data-testid="modal-video-slot"
                 >
                   <Film className="w-6 h-6 text-gray-400" />
-                  <span className="text-[11px] text-gray-500 mt-1">Adicionar vídeo</span>
-                  <input type="file" accept="video/*" onChange={handleVideoSelect} className="hidden" />
+                  <span className="text-[11px] text-gray-500 mt-1">Adicionar vídeo (MP4)</span>
+                  <input type="file" accept="video/mp4,video/webm" onChange={handleVideoSelect} className="hidden" />
                 </label>
               )}
             </div>
